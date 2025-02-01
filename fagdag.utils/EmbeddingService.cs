@@ -18,9 +18,6 @@ public class AzureOpenAIService : IAzureOpenAIService
     private ChatClient _chatClient { get; }
     private EmbeddingClient? _embeddingClient { get; }
 
-    /**
-     * <summary>Initialize the chat client with an API key</summary>
-     */
     public AzureOpenAIService(Uri endpoint,
         string deploymentName,
         string? embeddingDeploymentName = null,
