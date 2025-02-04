@@ -2,15 +2,13 @@ using Azure.Identity;
 using Azure.AI.OpenAI;
 using OpenAI.Chat;
 using System.ClientModel;
-using Google.Protobuf.WellKnownTypes;
 using OpenAI.Embeddings;
-using Azure.Core;
 
 namespace Fagdag.Utils;
 
 public interface IAzureOpenAIService
 {
-
+    Task<ReadOnlyMemory<float>> GetEmbeddingsAsync(string input, EmbeddingGenerationOptions? embeddingGenerationOptions = null);
 }
 
 public class AzureOpenAIService : IAzureOpenAIService
@@ -27,7 +25,7 @@ public class AzureOpenAIService : IAzureOpenAIService
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentException.ThrowIfNullOrEmpty(deploymentName);
 
-        var client = string.IsNullOrEmpty(apiKey) 
+        var client = string.IsNullOrEmpty(apiKey)
             ? new AzureOpenAIClient(endpoint, new DefaultAzureCredential(), options)
             : new AzureOpenAIClient(endpoint, new ApiKeyCredential(apiKey), options);
 
@@ -37,5 +35,14 @@ public class AzureOpenAIService : IAzureOpenAIService
         }
 
         _chatClient = client.GetChatClient(deploymentName);
+    }
+
+    public async Task<ReadOnlyMemory<float>> GetEmbeddingsAsync(string input, EmbeddingGenerationOptions? embeddingGenerationOptions = null)
+    {
+        ArgumentNullException.ThrowIfNull(_embeddingClient);
+        embeddingGenerationOptions ??= new EmbeddingGenerationOptions();
+
+        var result = await _embeddingClient.GenerateEmbeddingAsync(input, embeddingGenerationOptions);
+        return result.Value.ToFloats();
     }
 }

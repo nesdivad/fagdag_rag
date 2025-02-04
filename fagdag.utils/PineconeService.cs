@@ -6,13 +6,13 @@ namespace Fagdag.Utils;
 public interface IPineconeService
 {
     Task<Pinecone.Index?> GetIndexAsync(string name);
-    IndexClient GetIndexClient(Pinecone.Index index, 
-        ClientOptions? clientOptions = null);
+    Task<uint> UpsertAsync(string @namespace, List<Document> documents);
 }
 
 public class PineconeService : IPineconeService
 {
     private const string Region = "east-us-1";
+    private const string IndexName = "fagdag";
     private PineconeClient _client { get; }
 
     public PineconeService(
@@ -37,16 +37,40 @@ public class PineconeService : IPineconeService
         return index ?? await CreateIndexAsync(name);
     }
 
-    public IndexClient GetIndexClient(
-        Pinecone.Index index, 
-        ClientOptions? clientOptions = null)
+    /**
+     * <summary>
+     *  Upserts documents to the index.
+     *  Returns: Number of upserts
+     * </summary>
+     */
+    public async Task<uint> UpsertAsync(string @namespace, List<Document> documents)
     {
-        ArgumentNullException.ThrowIfNull(index);
-        return _client.Index(index.Name, index.Host, clientOptions);
+        ArgumentNullException.ThrowIfNullOrEmpty(@namespace);
+        ArgumentNullException.ThrowIfNull(documents);
+
+        var index = _client.Index(IndexName);
+        var vectors = new List<Vector>();
+        var chunks = documents.Chunk(200);
+
+        foreach (var chunk in chunks)
+        {
+            foreach (var doc in chunk)
+            {
+                vectors.Add(doc.ToVector());
+            }
+        }
+
+        var response = await index.UpsertAsync(new UpsertRequest
+        {
+            Vectors = vectors,
+            Namespace = @namespace
+        });
+
+        return response?.UpsertedCount ?? 0;
     }
 
     private async Task<Pinecone.Index> CreateIndexAsync(
-        string name, 
+        string name,
         CreateIndexRequest? createIndexRequest = null)
     {
         createIndexRequest ??= new()
@@ -60,7 +84,9 @@ public class PineconeService : IPineconeService
                     Cloud = ServerlessSpecCloud.Aws,
                     Region = Region
                 }
-            }
+            },
+
+            DeletionProtection = DeletionProtection.Enabled
         };
 
         return await _client.CreateIndexAsync(createIndexRequest);
