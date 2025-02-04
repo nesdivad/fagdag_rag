@@ -9,6 +9,8 @@ namespace Fagdag.Utils;
 public interface IAzureOpenAIService
 {
     Task<ReadOnlyMemory<float>> GetEmbeddingsAsync(string input, EmbeddingGenerationOptions? embeddingGenerationOptions = null);
+    Task<ClientResult<ChatCompletion>> GetCompletionsAsync(ChatMessage[] chatMessages, ChatCompletionOptions? options = null);
+    IAsyncEnumerable<StreamingChatCompletionUpdate> GetCompletionsStreamingAsync(ChatMessage[] chatMessages, ChatCompletionOptions? options = null);
 }
 
 public class AzureOpenAIService : IAzureOpenAIService
@@ -40,9 +42,41 @@ public class AzureOpenAIService : IAzureOpenAIService
     public async Task<ReadOnlyMemory<float>> GetEmbeddingsAsync(string input, EmbeddingGenerationOptions? embeddingGenerationOptions = null)
     {
         ArgumentNullException.ThrowIfNull(_embeddingClient);
-        embeddingGenerationOptions ??= new EmbeddingGenerationOptions();
+        embeddingGenerationOptions ??= new()
+        {
+            Dimensions = 1536
+        };
 
         var result = await _embeddingClient.GenerateEmbeddingAsync(input, embeddingGenerationOptions);
         return result.Value.ToFloats();
+    }
+
+    public async Task<ClientResult<ChatCompletion>> GetCompletionsAsync(ChatMessage[] chatMessages, ChatCompletionOptions? options = null)
+    {
+        options ??= new()
+        {
+            ResponseFormat = ChatResponseFormat.CreateTextFormat(),
+            MaxOutputTokenCount = 2048,
+            StoredOutputEnabled = false,
+            Temperature = 0.4f
+        };
+
+        return await _chatClient.CompleteChatAsync(chatMessages, options);
+    }
+
+    public async IAsyncEnumerable<StreamingChatCompletionUpdate> GetCompletionsStreamingAsync(ChatMessage[] chatMessages, ChatCompletionOptions? options = null)
+    {
+        options ??= new()
+        {
+            ResponseFormat = ChatResponseFormat.CreateTextFormat(),
+            MaxOutputTokenCount = 2048,
+            StoredOutputEnabled = false,
+            Temperature = 0.4f
+        };
+
+        await foreach (var update in _chatClient.CompleteChatStreamingAsync(chatMessages, options))
+        {
+            yield return update;
+        }
     }
 }
