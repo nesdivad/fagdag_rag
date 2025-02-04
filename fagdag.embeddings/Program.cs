@@ -10,10 +10,10 @@ hostBuilder.Configuration.AddUserSecrets<Program>();
 var app = hostBuilder.Build();
 
 string[] choices = [
-    "1. Sett opp miljøet", 
-    "2. Prosessering av tekst", 
-    "3. Lag embeddings", 
-    "4. Lagre embeddings i database", 
+    "1. Sett opp miljøet",
+    "2. Prosessering av tekst",
+    "3. Lag embeddings",
+    "4. Lagre embeddings i database",
     "5. [lime]Test hele løsningen![/]"
 ];
 
@@ -30,7 +30,13 @@ while (true)
     var index = Array.FindIndex(choices, x => x.Equals(choice, StringComparison.OrdinalIgnoreCase));
     switch (index)
     {
-        case 0: Setup.Init(); break;
-        default: AnsiConsole.MarkupLineInterpolated($"Du valgte [yellow]{choice}[/]"); break;
+        case 0:
+            Setup.Init();
+            break;
+        case 1:
+            TextProcessing.Init();
+            break;
+        default:
+            AnsiConsole.MarkupLineInterpolated($"Du valgte [yellow]{choice}[/]"); break;
     }
 }
