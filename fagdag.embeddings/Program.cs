@@ -1,12 +1,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Spectre.Console;
-using Fagdag.Utils;
 using Fagdag.Embeddings;
 
 var hostBuilder = Host.CreateApplicationBuilder(args);
 hostBuilder.Configuration.AddUserSecrets<Program>();
-
+State appState = new(hostBuilder.Configuration);
 var app = hostBuilder.Build();
 
 string[] choices = [
@@ -16,6 +15,7 @@ string[] choices = [
     "4. Lagre embeddings i database",
     "5. [lime]Test hele løsningen![/]"
 ];
+
 
 while (true)
 {
@@ -34,7 +34,8 @@ while (true)
             Setup.Init();
             break;
         case 1:
-            TextProcessing.Init();
+            appState.Jobs = await Jobbnorge.GetJobsAsync();
+            appState.ProcessText();
             break;
         default:
             AnsiConsole.MarkupLineInterpolated($"Du valgte [yellow]{choice}[/]"); break;

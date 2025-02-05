@@ -1,5 +1,4 @@
 using Spectre.Console;
-using Fagdag.Utils;
 using System.Text.Json;
 
 namespace Fagdag.Embeddings;
@@ -26,6 +25,9 @@ public static class Setup
 
         var pineconeApiKey = AnsiConsole.Ask<string>("Lim inn API-nøkkelen til Pinecone: ");
         appsettings["PINECONE_API_KEY"] = pineconeApiKey;
+
+        var storageConn = AnsiConsole.Ask<string>("Lim inn connection string for Azure Storage Account: ");
+        appsettings["AZURE_STORAGE_ACCOUNT"] = storageConn;
 
         File.WriteAllText("appsettings.json", JsonSerializer.Serialize(appsettings, new JsonSerializerOptions() { WriteIndented = true }));
 

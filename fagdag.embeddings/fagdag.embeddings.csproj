@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <UserSecretsId>d793183d-8706-41b4-97f6-2ff08e1f1dec</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

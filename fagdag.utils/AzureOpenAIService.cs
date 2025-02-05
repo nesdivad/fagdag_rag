@@ -15,8 +15,8 @@ public interface IAzureOpenAIService
 
 public class AzureOpenAIService : IAzureOpenAIService
 {
-    private ChatClient _chatClient { get; }
-    private EmbeddingClient? _embeddingClient { get; }
+    private ChatClient ChatClient { get; }
+    private EmbeddingClient? EmbeddingClient { get; }
 
     public AzureOpenAIService(Uri endpoint,
         string deploymentName,
@@ -33,21 +33,21 @@ public class AzureOpenAIService : IAzureOpenAIService
 
         if (!string.IsNullOrEmpty(embeddingDeploymentName))
         {
-            _embeddingClient = client.GetEmbeddingClient(embeddingDeploymentName);
+            EmbeddingClient = client.GetEmbeddingClient(embeddingDeploymentName);
         }
 
-        _chatClient = client.GetChatClient(deploymentName);
+        ChatClient = client.GetChatClient(deploymentName);
     }
 
     public async Task<ReadOnlyMemory<float>> GetEmbeddingsAsync(string input, EmbeddingGenerationOptions? embeddingGenerationOptions = null)
     {
-        ArgumentNullException.ThrowIfNull(_embeddingClient);
+        ArgumentNullException.ThrowIfNull(EmbeddingClient);
         embeddingGenerationOptions ??= new()
         {
             Dimensions = 1536
         };
 
-        var result = await _embeddingClient.GenerateEmbeddingAsync(input, embeddingGenerationOptions);
+        var result = await EmbeddingClient.GenerateEmbeddingAsync(input, embeddingGenerationOptions);
         return result.Value.ToFloats();
     }
 
@@ -61,7 +61,7 @@ public class AzureOpenAIService : IAzureOpenAIService
             Temperature = 0.4f
         };
 
-        return await _chatClient.CompleteChatAsync(chatMessages, options);
+        return await ChatClient.CompleteChatAsync(chatMessages, options);
     }
 
     public async IAsyncEnumerable<StreamingChatCompletionUpdate> GetCompletionsStreamingAsync(ChatMessage[] chatMessages, ChatCompletionOptions? options = null)
@@ -74,7 +74,7 @@ public class AzureOpenAIService : IAzureOpenAIService
             Temperature = 0.4f
         };
 
-        await foreach (var update in _chatClient.CompleteChatStreamingAsync(chatMessages, options))
+        await foreach (var update in ChatClient.CompleteChatStreamingAsync(chatMessages, options))
         {
             yield return update;
         }

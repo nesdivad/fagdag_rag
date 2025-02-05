@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "name": "C#: fagdag.embeddings Debug",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/fagdag.embeddings/fagdag.embeddings.csproj"
+        }
+    ]
+}

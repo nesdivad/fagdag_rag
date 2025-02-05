@@ -4,12 +4,14 @@ namespace Fagdag.Utils;
 
 public class Document(
     string id,
-    float[] values,
-    Pinecone.Metadata? metadata = null)
+    string content,
+    float[]? values = null,
+    Metadata? metadata = null)
 {
     public string Id { get; set; } = id;
-    public float[] Values { get; set; } = values;
-    public Pinecone.Metadata Metadata { get; set; } = metadata ?? new();
+    public string Content { get; set; } = content;
+    public float[]? Values { get; set; } = values;
+    public Metadata Metadata { get; set; } = metadata ?? [];
 }
 
 public static class DocumentExtensions

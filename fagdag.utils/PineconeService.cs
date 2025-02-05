@@ -6,28 +6,34 @@ namespace Fagdag.Utils;
 public interface IPineconeService
 {
     Task<Pinecone.Index?> GetIndexAsync(string name);
-    Task<uint> UpsertAsync(string @namespace, List<Document> documents);
+    Task<uint> UpsertAsync(List<Document> documents);
 }
 
 public class PineconeService : IPineconeService
 {
     private const string Region = "east-us-1";
     private const string IndexName = "fagdag";
-    private PineconeClient _client { get; }
+    private PineconeClient Client { get; }
+    private string Namespace { get; init; }
 
     public PineconeService(
-        ApiKeyCredential apiKeyCredential,
+        string apiKey,
+        string @namespace,
         ClientOptions? options = null)
     {
-        ArgumentNullException.ThrowIfNull(apiKeyCredential);
+        ArgumentException.ThrowIfNullOrEmpty(apiKey);
+        var apiKeyCredential = new ApiKeyCredential(apiKey);
         apiKeyCredential.Deconstruct(out string key);
 
-        _client = new(apiKey: key, options);
+        options ??= new();
+        
+        Client = new(apiKey: key, options);
+        Namespace = @namespace;
     }
 
     public async Task<Pinecone.Index?> GetIndexAsync(string name)
     {
-        var indexList = await _client.ListIndexesAsync();
+        var indexList = await Client.ListIndexesAsync();
         if (indexList.Indexes is null)
             return await CreateIndexAsync(name);
 
@@ -43,12 +49,12 @@ public class PineconeService : IPineconeService
      *  Returns: Number of upserts
      * </summary>
      */
-    public async Task<uint> UpsertAsync(string @namespace, List<Document> documents)
+    public async Task<uint> UpsertAsync(List<Document> documents)
     {
-        ArgumentNullException.ThrowIfNullOrEmpty(@namespace);
+        ArgumentException.ThrowIfNullOrEmpty(Namespace);
         ArgumentNullException.ThrowIfNull(documents);
 
-        var index = _client.Index(IndexName);
+        var index = Client.Index(IndexName);
         var vectors = new List<Vector>();
         var chunks = documents.Chunk(200);
 
@@ -63,7 +69,7 @@ public class PineconeService : IPineconeService
         var response = await index.UpsertAsync(new UpsertRequest
         {
             Vectors = vectors,
-            Namespace = @namespace
+            Namespace = Namespace
         });
 
         return response?.UpsertedCount ?? 0;
@@ -89,7 +95,7 @@ public class PineconeService : IPineconeService
             DeletionProtection = DeletionProtection.Enabled
         };
 
-        return await _client.CreateIndexAsync(createIndexRequest);
+        return await Client.CreateIndexAsync(createIndexRequest);
     }
 
 }
