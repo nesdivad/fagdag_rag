@@ -1,2 +1,5 @@
 bin/
 obj/
+notebooks/.venv
+notebooks/fagdag
+notebooks/markdown
