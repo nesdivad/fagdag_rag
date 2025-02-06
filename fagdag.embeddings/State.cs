@@ -1,37 +1,26 @@
 using Fagdag.Utils;
-
 using Microsoft.Extensions.Configuration;
-
-using OneOf;
-
-using Pinecone;
-
 using Spectre.Console;
 
 namespace Fagdag.Embeddings;
 
 public class State(IConfiguration configuration)
 {
-    public List<Job> Jobs { get; set; } = [];
     public List<Document> Documents { get; set; } = [];
 
     private IConfiguration Configuration { get; } = configuration;
     private AzureOpenAIService? AzureOpenAIService { get; set; }
-    private PineconeService? PineconeService { get; set; }
 
     private void InitServices()
     {
         var endpoint = Configuration["AZURE_OPENAI_ENDPOINT"];
         var apiKey = Configuration["AZURE_OPENAI_API_KEY"];
-        var pineconeApiKey = Configuration["PINECONE_API_KEY"];
         var @namespace = Configuration["Username"];
 
         if (string.IsNullOrEmpty(endpoint))
             throw new NullReferenceException(nameof(endpoint));
         if (string.IsNullOrEmpty(apiKey))
             throw new NullReferenceException(nameof(apiKey));
-        if (string.IsNullOrEmpty(pineconeApiKey))
-            throw new NullReferenceException(nameof(pineconeApiKey));
         if (string.IsNullOrEmpty(@namespace))
             throw new NullReferenceException(nameof(@namespace));
 
@@ -41,8 +30,6 @@ public class State(IConfiguration configuration)
             "text-embedding-3-large",
             apiKey
         );
-
-        PineconeService = new PineconeService(pineconeApiKey, @namespace);
     }
 
     public async Task<uint> DoAllTheStuff()
@@ -66,30 +53,12 @@ public class State(IConfiguration configuration)
     {
         #region [ Don't look here ]
 
-        if (Jobs is { Count: 0 })
-            return []; // throw something
-
-        if (AzureOpenAIService is null || PineconeService is null)
+        if (AzureOpenAIService is null)
             InitServices();
-
+            
         #endregion
 
-        return [.. Jobs.Select(x =>
-        {
-            var content = $"{x.Title}\n{x.Summary}";
-            var metadata = new Metadata
-            {
-                ["link"] = x.Link,
-                ["jobDuration"] = x.JobDuration,
-                ["jobScope"] = x.JobScope,
-                ["employer"] = x.Employer,
-                ["department"] = x.Department,
-                ["title"] = x.Title,
-                ["content"] = content
-            };
-
-            return new Document(x.Id, content, metadata: metadata);
-        })];
+        throw new NotImplementedException();
     }
 
     public async Task CreateEmbeddings()
@@ -117,16 +86,6 @@ public class State(IConfiguration configuration)
 
     public async Task<uint> StoreInDatabase()
     {
-        #region [ No interesting stuff going on here ]
-
-        if (PineconeService is null)
-            throw new NullReferenceException(nameof(PineconeService));
-        if (Documents.Any(x => x.Values is null))
-            return 0; // throw something
-
-        #endregion
-
-        uint count = await PineconeService.UpsertAsync(Documents);
-        return count;
+        throw new NotImplementedException();
     }
 }

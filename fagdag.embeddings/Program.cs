@@ -34,7 +34,6 @@ while (true)
             Setup.Init();
             break;
         case 1:
-            appState.Jobs = await Jobbnorge.GetJobsAsync();
             appState.ProcessText();
             break;
         default:
