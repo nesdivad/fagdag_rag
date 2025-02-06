@@ -5,7 +5,6 @@ using Fagdag.Embeddings;
 
 var hostBuilder = Host.CreateApplicationBuilder(args);
 hostBuilder.Configuration.AddUserSecrets<Program>();
-State appState = new(hostBuilder.Configuration);
 var app = hostBuilder.Build();
 
 string[] choices = [
@@ -34,7 +33,6 @@ while (true)
             Setup.Init();
             break;
         case 1:
-            appState.ProcessText();
             break;
         default:
             AnsiConsole.MarkupLineInterpolated($"Du valgte [yellow]{choice}[/]"); break;

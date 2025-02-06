@@ -1,12 +1,16 @@
 using Azure;
 using Azure.Search.Documents.Indexes;
 using Azure.Search.Documents.Indexes.Models;
+
 using System.ClientModel;
 
 namespace Fagdag.Utils;
 
 public interface IAzureSearchIndexerService
 {
+    Task GetIndexerStatus(SearchIndexer indexer);
+    Task<SearchIndex> CreateOrUpdateSearchIndexAsync();
+    Task<SearchIndexer> CreateOrUpdateIndexerAsync();
     Task<SearchIndexerSkillset> CreateSkillsetAsync();
 }
 
@@ -16,31 +20,42 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
 
     // Bruk denne hvis ting går sideveis...
     private const string DefaultSkillset = "default";
+    private string IndexName { get; init; }
+    private string IndexerName { get; init; }
+    private string Username { get; init; }
+    private SearchIndexClient SearchIndexClient { get; init; }
     private SearchIndexerClient SearchIndexerClient { get; init; }
-    private SearchIndexerDataSourceConnection SearchIndexerDataSourceConnection { get; init; }
+    private SearchIndexerDataSourceConnection DataSourceConnection { get; init; }
     private ApiKeyCredential AIServicesApiKey { get; init; }
     private Uri? AIServicesEndpoint { get; init; }
-    
+
     public AzureSearchIndexerService(
-        string searchApiKey, 
-        string searchEndpoint, 
+        string username,
+        string searchApiKey,
+        string searchEndpoint,
         string aiServicesApiKey,
         string aiServicesEndpoint,
         string storageConnectionString)
     {
+        ArgumentException.ThrowIfNullOrEmpty(username);
         ArgumentException.ThrowIfNullOrEmpty(searchApiKey);
         ArgumentException.ThrowIfNullOrEmpty(searchEndpoint);
         ArgumentException.ThrowIfNullOrEmpty(aiServicesApiKey);
         ArgumentException.ThrowIfNullOrEmpty(aiServicesEndpoint);
         ArgumentException.ThrowIfNullOrEmpty(storageConnectionString);
-        
+
+        Username = username;
+        IndexName = $"index_{Username}";
+        IndexerName = $"indexer_{Username}";
+
+        SearchIndexClient = new(new Uri(searchEndpoint), new AzureKeyCredential(searchApiKey));
         SearchIndexerClient = new(new Uri(searchEndpoint), new AzureKeyCredential(searchApiKey));
         AIServicesApiKey = new(aiServicesApiKey);
 
         SearchIndexerDataSourceConnection dataSourceConnection = new(
-            "fagdag", 
-            SearchIndexerDataSourceType.AzureBlob, 
-            storageConnectionString, 
+            "fagdag",
+            SearchIndexerDataSourceType.AzureBlob,
+            storageConnectionString,
             new SearchIndexerDataContainer("markdown")
         );
         try
@@ -57,7 +72,87 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
             Console.WriteLine($"En feil oppsto ved oppretting av datakilde.\nException: {e.Message}");
         }
 
-        SearchIndexerDataSourceConnection = dataSourceConnection;
+        DataSourceConnection = dataSourceConnection;
+    }
+
+    public async Task<SearchIndex> CreateOrUpdateSearchIndexAsync()
+    {
+        FieldBuilder builder = new();
+        SearchIndex searchIndex = new(IndexName)
+        {
+            Fields = builder.Build(typeof(Index))
+        };
+
+        try
+        {
+            await SearchIndexClient.GetIndexAsync(searchIndex.Name);
+            await SearchIndexClient.DeleteIndexAsync(searchIndex.Name);
+        }
+        catch (RequestFailedException ex) when (ex.Status is 404) { }
+
+        try
+        {
+            await SearchIndexClient.CreateOrUpdateIndexAsync(
+                searchIndex,
+                allowIndexDowntime: true,
+                onlyIfUnchanged: true
+            );
+        }
+        catch (RequestFailedException)
+        {
+            Console.WriteLine("Hopper over oppdatering av indeks...");
+        }
+
+        return searchIndex;
+    }
+
+    public async Task<SearchIndexer> CreateOrUpdateIndexerAsync()
+    {
+        // https://learn.microsoft.com/en-us/azure/search/cognitive-search-tutorial-blob-dotnet#step-4-create-and-run-an-indexer
+        IndexingParameters indexingParameters = new()
+        {
+            MaxFailedItems = -1,
+            MaxFailedItemsPerBatch = -1
+        };
+
+        indexingParameters.IndexingParametersConfiguration.Add(
+            key: "dataToExtract",
+            value: "contentAndMetadata"
+        );
+
+
+        SearchIndexer indexer = new(
+            name: IndexerName,
+            dataSourceName: DataSourceConnection.Name,
+            targetIndexName: IndexName)
+        {
+            Parameters = indexingParameters
+        };
+
+        FieldMappingFunction fieldMappingFunction = new("base64Encode");
+
+        indexer.FieldMappings.Add(new("content")
+        {
+            TargetFieldName = "content"
+        });
+
+        try
+        {
+            await SearchIndexerClient.GetIndexerAsync(indexer.Name);
+            await SearchIndexerClient.DeleteIndexerAsync(indexer.Name);
+        }
+        catch (RequestFailedException ex) when (ex.Status is 404) { }
+
+        try
+        {
+            await SearchIndexerClient.CreateOrUpdateIndexerAsync(indexer);
+        }
+        catch (RequestFailedException ex)
+        {
+            Console.WriteLine($"En feil oppsto under oppretting av indekserer.\n{ex.Message}");
+        }
+
+        return indexer;
     }
 
     /**
@@ -70,11 +165,11 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         // TODO: Opprett en instans av hver skill du ønsker å bruke
         var piiSkill = GetPiiDetectionSkill();
         var splitSkill = GetSplitSkill(
-            maximumPageLength: 1000, 
+            maximumPageLength: 1000,
             pageOverlapLength: 250
         );
         var embeddingSkill = GetEmbeddingSkill(
-            apiKey: apiKey, 
+            apiKey: apiKey,
             endpoint: AIServicesEndpoint ?? throw new NullReferenceException(nameof(AIServicesEndpoint))
         );
 
@@ -98,11 +193,31 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         return indexerSkillset;
     }
 
+    public async Task GetIndexerStatus(SearchIndexer indexer)
+    {
+        try
+        {
+            var executionInfo = await SearchIndexerClient.GetIndexerStatusAsync(indexer.Name);
+            switch (executionInfo.Value.Status)
+            {
+                case IndexerStatus.Running: Console.WriteLine("Indexer is running ..."); break;
+                case IndexerStatus.Unknown: Console.WriteLine("Indexer status unknown."); break;
+                case IndexerStatus.Error: Console.WriteLine("Indexer returned an error =("); break;
+                default: break;
+            }
+            ;
+        }
+        catch (RequestFailedException e)
+        {
+            Console.WriteLine($"En feil oppsto under henting av status for indekserer.\n{e.Message}");
+        }
+    }
+
     /**
      * <summary>Opprett eller oppdater et skillset</summary>
      */
     private static async Task<SearchIndexerSkillset> CreateOrUpdateSearchIndexerSkillset(
-        SearchIndexerClient indexerClient, 
+        SearchIndexerClient indexerClient,
         IList<SearchIndexerSkill> skills,
         string aiServicesApiKey)
     {
@@ -195,7 +310,7 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
      * <summary>Lager embeddings av teksten i hvert dokument.</summary>
      */
     private static AzureOpenAIEmbeddingSkill GetEmbeddingSkill(
-        string apiKey, 
+        string apiKey,
         Uri endpoint)
     {
         ArgumentException.ThrowIfNullOrEmpty(apiKey);
