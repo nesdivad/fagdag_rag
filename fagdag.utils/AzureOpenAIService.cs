@@ -19,9 +19,9 @@ public class AzureOpenAIService : IAzureOpenAIService
     private EmbeddingClient? EmbeddingClient { get; }
 
     public AzureOpenAIService(Uri endpoint,
+        string apiKey,
         string deploymentName,
-        string? embeddingDeploymentName = null,
-        string? apiKey = null,
+        string embeddingDeploymentName,
         AzureOpenAIClientOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
