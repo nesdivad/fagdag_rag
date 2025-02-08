@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fagdag.embeddings", "fagdag.embeddings\fagdag.embeddings.csproj", "{E30257F7-E6BA-4793-8DFD-A73C81D4E29B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fagdag.console", "fagdag.console\fagdag.console.csproj", "{E30257F7-E6BA-4793-8DFD-A73C81D4E29B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fagdag.utils", "fagdag.utils\fagdag.utils.csproj", "{820935BA-13E3-4215-BF28-59BAD51203BD}"
 EndProject

@@ -9,6 +9,7 @@ namespace Fagdag.Utils;
 public interface IAzureOpenAIService
 {
     Task<ReadOnlyMemory<float>> GetEmbeddingsAsync(string input, EmbeddingGenerationOptions? embeddingGenerationOptions = null);
+    ClientResult<ChatCompletion> GetCompletions(ChatMessage[] chatMessages, ChatCompletionOptions? options = null);
     Task<ClientResult<ChatCompletion>> GetCompletionsAsync(ChatMessage[] chatMessages, ChatCompletionOptions? options = null);
     IAsyncEnumerable<StreamingChatCompletionUpdate> GetCompletionsStreamingAsync(ChatMessage[] chatMessages, ChatCompletionOptions? options = null);
 }
@@ -49,6 +50,19 @@ public class AzureOpenAIService : IAzureOpenAIService
 
         var result = await EmbeddingClient.GenerateEmbeddingAsync(input, embeddingGenerationOptions);
         return result.Value.ToFloats();
+    }
+
+    public ClientResult<ChatCompletion> GetCompletions(ChatMessage[] chatMessages, ChatCompletionOptions? options = null)
+    {
+        options ??= new()
+        {
+            ResponseFormat = ChatResponseFormat.CreateTextFormat(),
+            MaxOutputTokenCount = 2048,
+            StoredOutputEnabled = false,
+            Temperature = 0.4f
+        };
+
+        return ChatClient.CompleteChat(chatMessages, options);
     }
 
     public async Task<ClientResult<ChatCompletion>> GetCompletionsAsync(ChatMessage[] chatMessages, ChatCompletionOptions? options = null)
