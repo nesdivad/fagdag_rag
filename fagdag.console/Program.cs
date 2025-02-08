@@ -13,18 +13,18 @@ var configuration = app.Services.GetRequiredService<IConfiguration>();
 
 
 string username = string.Empty;
-string[] startChoices = [
-    "1. Sett opp dataflyt og søkeindeks",
-    "2. Sett opp RAG og prompts for generativ AI"
-];
-
 AzureOpenAIService? azureOpenAIService;
 AzureSearchIndexerService? azureSearchIndexerService;
 
-Start(startChoices);
+Start();
 
-void Start(string[] choices)
+void Start()
 {
+    string[] choices = [
+        "1. Sett opp dataflyt og søkeindeks",
+        "2. Sett opp RAG og prompts for generativ AI"
+    ];
+
     while (true)
     {
         AnsiConsole.Clear();
@@ -34,7 +34,6 @@ void Start(string[] choices)
                 .Title("Vennligst velg ditt neste steg:")
                 .AddChoices(choices)
         );
-
 
         var index = Array.FindIndex(choices, x => x.Equals(choice, StringComparison.OrdinalIgnoreCase));
         switch (index)
@@ -63,18 +62,6 @@ void DataFlow(IConfiguration configuration)
         "5. [lime]Test hele løsningen![/]"
     ];
 
-    var appsettings = new JsonText(
-        """
-        {
-            "AZURE_OPENAI_API_KEY": "",
-            "AZURE_OPENAI_ENDPOINT": "",
-            "AZURE_SEARCH_API_KEY": "",
-            "AZURE_SEARCH_ENDPOINT": "",
-            "AZURE_STORAGE_CONNECTION_STRING": ""
-        }
-        """
-    );
-
     void Information()
     {
         AnsiConsole.MarkupLine("Velkommen til første del av fagdagen om generativ AI med [green]RAG![/]");
@@ -92,6 +79,18 @@ void DataFlow(IConfiguration configuration)
 
     void StepZero()
     {
+        var appsettings = new JsonText(
+            """
+            {
+                "AZURE_OPENAI_API_KEY": "",
+                "AZURE_OPENAI_ENDPOINT": "",
+                "AZURE_SEARCH_API_KEY": "",
+                "AZURE_SEARCH_ENDPOINT": "",
+                "AZURE_STORAGE_CONNECTION_STRING": ""
+            }
+            """
+        );
+        
         AnsiConsole.MarkupLine("[fuchsia]Konfigurasjon:[/]");
         AnsiConsole.MarkupLine("Finn filen [yellow]appsettings.json[/] i prosjektet [yellow]fagdag.console[/], og legg inn verdier for følgende variabler: ");
         AnsiConsole.Write(
@@ -400,14 +399,3 @@ static string CreateOrRetrieveUsername()
 }
 
 #endregion
-
-public static class Constants
-{
-    public const string AzureOpenAIEndpoint = "AZURE_OPENAI_ENDPOINT";
-    public const string AzureOpenAIApiKey = "AZURE_OPENAI_API_KEY";
-    public const string AzureSearchEndpoint = "AZURE_SEARCH_ENDPOINT";
-    public const string AzureSearchApiKey = "AZURE_SEARCH_API_KEY";
-    public const string AzureStorageConnectionString = "AZURE_STORAGE_CONNECTION_STRING";
-    public const string Gpt4o = "gpt-4o";
-    public const string TextEmbedding3Large = "text-embedding-3-large";
-}

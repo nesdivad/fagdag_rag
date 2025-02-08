@@ -15,7 +15,7 @@ public class StorageService : IStorageService
 
     public StorageService(string connectionString)
     {
-        ArgumentNullException.ThrowIfNullOrEmpty(connectionString);
+        ArgumentException.ThrowIfNullOrEmpty(connectionString);
 
         _client = new(connectionString);
     }

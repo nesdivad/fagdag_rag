@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fagdag.console", "fagdag.co
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fagdag.utils", "fagdag.utils\fagdag.utils.csproj", "{820935BA-13E3-4215-BF28-59BAD51203BD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fagdag.web", "fagdag.web\fagdag.web.csproj", "{66A158EE-2316-443E-A748-E95F481AD742}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{820935BA-13E3-4215-BF28-59BAD51203BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{820935BA-13E3-4215-BF28-59BAD51203BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{820935BA-13E3-4215-BF28-59BAD51203BD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66A158EE-2316-443E-A748-E95F481AD742}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66A158EE-2316-443E-A748-E95F481AD742}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66A158EE-2316-443E-A748-E95F481AD742}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66A158EE-2316-443E-A748-E95F481AD742}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
