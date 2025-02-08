@@ -21,7 +21,6 @@ string[] startChoices = [
 AzureOpenAIService? azureOpenAIService;
 AzureSearchIndexerService? azureSearchIndexerService;
 
-
 Start(startChoices);
 
 void Start(string[] choices)
@@ -94,7 +93,7 @@ void DataFlow(IConfiguration configuration)
     void StepZero()
     {
         AnsiConsole.MarkupLine("[fuchsia]Konfigurasjon:[/]");
-        AnsiConsole.MarkupLine("Finn filen [yellow]appsettings.json[/] i prosjektet [yellow]fagdag.embeddings[/], og legg inn verdier for følgende variabler: ");
+        AnsiConsole.MarkupLine("Finn filen [yellow]appsettings.json[/] i prosjektet [yellow]fagdag.console[/], og legg inn verdier for følgende variabler: ");
         AnsiConsole.Write(
             new Panel(appsettings)
                 .Header("appsettings.json")
@@ -105,7 +104,7 @@ void DataFlow(IConfiguration configuration)
         AnsiConsole.MarkupLine("Verdiene ligger i et [yellow]Keeper[/]-dokument, og deles med deg.");
     }
 
-    bool TestConfiguration()
+    bool TestStepZero()
     {
         bool successful = false;
         AnsiConsole.Status()
@@ -115,7 +114,6 @@ void DataFlow(IConfiguration configuration)
                 AnsiConsole.Write("\n");
                 try
                 {
-                    username = CreateOrRetrieveUsername();
                     azureOpenAIService = CreateAzureOpenAIService(configuration);
                     azureSearchIndexerService = CreateAzureSearchIndexerService(configuration, username);
 
@@ -176,6 +174,7 @@ void DataFlow(IConfiguration configuration)
     RenderSeparator();
     StepZero();
     PromptNext(prompt: "\nTrykk [teal]Enter[/] for å gå til neste steg.");
+    username = CreateOrRetrieveUsername();
     AnsiConsole.Clear();
     RenderUsername(username);
 
@@ -186,9 +185,28 @@ void DataFlow(IConfiguration configuration)
 
 // Prosessering av tekst
 // Oppsett av skills og skillset
-static void TextProcessing()
+void TextProcessing()
 {
+    void Information()
+    {
+        AnsiConsole.MarkupLine("[fuchsia]Tekstprosessering:[/]");
+        AnsiConsole.MarkupLine("I denne delen skal du lære å sette opp en pipeline for prosessering av tekst, fra rå data i markdown-format til søkbare indekserte dokumenter.");
+        AnsiConsole.MarkupLine("Den tekniske termen for en pipeline i [aqua]Azure AI Search[/] er et [aqua]skillset[/]. Et [aqua]skillset[/] består av ett eller flere [lime]skills[/].");
+        AnsiConsole.MarkupLine("Et [lime]skill[/] består av funksjonalitet som beriker søkedokumentet med informasjon. Dette kan være funksjonalitet som oversetter tekst, fjerner sensitiv informasjon, splitter dokumenter opp i mindre biter m.m.");
+        AnsiConsole.MarkupLine("Det er mulig å lage egne skills, men i denne løsningen skal vi bare bruke skills fra Microsoft sitt bibliotek.");
+        AnsiConsole.MarkupLine("Mer dokumentasjon om skillsets finnes her: [blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-working-with-skillsets[/]");
+    }
+
+    void Skills()
+    {
+
+    }
+
+    AnsiConsole.Clear();
+    RenderUsername(username);
+    Information();
     PromptNext();
+    Skills();
 }
 
 // Oppsett av indeks og indekserer
