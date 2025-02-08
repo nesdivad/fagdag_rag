@@ -56,8 +56,8 @@ void Start(string[] choices)
 void DataFlow(IConfiguration configuration)
 {
     string[] choices = [
-        "1. Sett opp innstillinger",
-        "2. Start implementasjon",
+        "1. Konfigurer skills og skillset",
+        "2. Opprett indekserer",
         "3. Lag embeddings",
         "4. Lagre embeddings i database",
         "5. [lime]Test hele løsningen![/]"
@@ -139,6 +139,9 @@ void DataFlow(IConfiguration configuration)
 
     void Select()
     {
+        AnsiConsole.Clear();
+        RenderUsername(username);
+
         var step = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
                 .Title("Velg ditt neste steg:")
@@ -175,8 +178,6 @@ void DataFlow(IConfiguration configuration)
     StepZero();
     PromptNext(prompt: "\nTrykk [teal]Enter[/] for å gå til neste steg.");
     username = CreateOrRetrieveUsername();
-    AnsiConsole.Clear();
-    RenderUsername(username);
 
     bool @return = false;
     do Select();
@@ -194,19 +195,64 @@ void TextProcessing()
         AnsiConsole.MarkupLine("Den tekniske termen for en pipeline i [aqua]Azure AI Search[/] er et [aqua]skillset[/]. Et [aqua]skillset[/] består av ett eller flere [lime]skills[/].");
         AnsiConsole.MarkupLine("Et [lime]skill[/] består av funksjonalitet som beriker søkedokumentet med informasjon. Dette kan være funksjonalitet som oversetter tekst, fjerner sensitiv informasjon, splitter dokumenter opp i mindre biter m.m.");
         AnsiConsole.MarkupLine("Det er mulig å lage egne skills, men i denne løsningen skal vi bare bruke skills fra Microsoft sitt bibliotek.");
-        AnsiConsole.MarkupLine("Mer dokumentasjon om skillsets finnes her: [blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-working-with-skillsets[/]");
+        AnsiConsole.MarkupLine("Mer dokumentasjon om skillsets finnes her: [link]https://learn.microsoft.com/en-us/azure/search/cognitive-search-working-with-skillsets[/]");
     }
 
     void Skills()
     {
+        AnsiConsole.MarkupLine("[fuchsia]Skillsets:[/]");
+        AnsiConsole.MarkupLine("I dette steget skal skillsettet implementeres. For å holde det relativt enkelt er det valgt ut 3 skills som skal benyttes i settet, og hele flyten kan da se slik ut:");
+        AnsiConsole.MarkupLine("\n[red]Rå data[/] | [lime]PII Detection[/] | [lime]Split skill[/] | [lime]Embedding skill[/] | [blue]Søkeklart dokument![/]\n");
+        AnsiConsole.MarkupLine("[lime underline]PII Detection[/]: Finner tekst som inneholder personlig identifiserbar informasjon og maskerer den.");
+        AnsiConsole.MarkupLine("[lime underline]Split skill[/]: Splitter dokumenter opp i mindre deler.");
+        AnsiConsole.MarkupLine("[lime underline]Embedding skill[/]: Lager embeddings av teksten i dokumentet.\n");
 
+        AnsiConsole.MarkupLine("[link blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-pii-detection[/]");
+        AnsiConsole.MarkupLine("[link blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-textsplit[/]");
+        AnsiConsole.MarkupLine("[link blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-azure-openai-embedding[/]");
+    }
+
+    void Impl()
+    {
+        AnsiConsole.MarkupLine("[fuchsia]Implementasjon:[/]");
+        AnsiConsole.MarkupLine("Gå til [yellow]Fagdag.Utils.AzureSearchIndexerService.cs[/] og implementér metoden [purple]CreateSkillsetAsync[/].");
+        AnsiConsole.MarkupLine("Start med å opprette de individuelle skillsene, før du setter dem sammen i et skillset. Til slutt skal skillsettet deployes ved å bruke metoden [purple]CreateOrUpdateSearchIndexerSkillset[/].");
+        AnsiConsole.MarkupLine("\n[lime]PS:[/] Det er laget implementasjoner for individuelle skills nederst i [yellow]Fagdag.Utils.AzureSearchIndexerService.cs[/]");
+
+        var codePanel = new Panel(new Text(
+            """
+            public async Task<SearchIndexerSkillset> CreateSkillsetAsync()
+            {
+                // TODO: Dekonstruer API-nøkkel for AI Services
+
+                // TODO: Opprett en instans av hver skill du ønsker å bruke
+
+                // TODO: Lag en liste med alle skills
+
+                // TODO: Deploy skillsettet til ressursen i Azure    
+
+                // TODO: Fjern denne når implementasjonen er klar
+                throw new NotImplementedException();
+            }
+            """
+        ));
+
+        AnsiConsole.Write(codePanel);
     }
 
     AnsiConsole.Clear();
     RenderUsername(username);
+
     Information();
     PromptNext();
+
+    RenderSeparator();
     Skills();
+    PromptNext();
+
+    RenderSeparator();
+    Impl();
+    PromptNext(prompt: "\nTrykk [teal]Enter[/] for å fullføre steget.");
 }
 
 // Oppsett av indeks og indekserer

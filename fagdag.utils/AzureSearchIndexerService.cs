@@ -75,6 +75,45 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         DataSourceConnection = dataSourceConnection;
     }
 
+    /**
+     * <summary>Opprett skills, lag et nytt skillset og deploy det til ressursen i Azure
+     */
+    public async Task<SearchIndexerSkillset> CreateSkillsetAsync()
+    {
+        // TODO: Dekonstruer API-nøkkel for AI Services
+        AIServicesApiKey.Deconstruct(out string apiKey);
+
+        // TODO: Opprett en instans av hver skill du ønsker å bruke
+        var piiSkill = GetPiiDetectionSkill();
+        var splitSkill = GetSplitSkill(
+            maximumPageLength: 1000,
+            pageOverlapLength: 250
+        );
+        var embeddingSkill = GetEmbeddingSkill(
+            apiKey: apiKey,
+            endpoint: AIServicesEndpoint ?? throw new NullReferenceException(nameof(AIServicesEndpoint))
+        );
+
+        // TODO: Lag en liste med alle skills
+        List<SearchIndexerSkill> skills = [
+            piiSkill,
+            splitSkill,
+            embeddingSkill
+        ];
+
+        // TODO: Deploy skillsettet til ressursen i Azure
+        SearchIndexerSkillset indexerSkillset = await CreateOrUpdateSearchIndexerSkillset(
+            indexerClient: SearchIndexerClient,
+            skills: skills,
+            aiServicesApiKey: apiKey
+        );
+
+        // TODO: Fjern denne når implementasjonen er klar
+        // throw new NotImplementedException();
+
+        return indexerSkillset;
+    }
+
     public async Task<SearchIndex> CreateOrUpdateSearchIndexAsync()
     {
         FieldBuilder builder = new();
@@ -153,44 +192,6 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         }
 
         return indexer;
-    }
-
-    /**
-     * <summary>Opprett skills, lag et nytt skillset og deploy det til ressursen i Azure
-     */
-    public async Task<SearchIndexerSkillset> CreateSkillsetAsync()
-    {
-        AIServicesApiKey.Deconstruct(out string apiKey);
-
-        // TODO: Opprett en instans av hver skill du ønsker å bruke
-        var piiSkill = GetPiiDetectionSkill();
-        var splitSkill = GetSplitSkill(
-            maximumPageLength: 1000,
-            pageOverlapLength: 250
-        );
-        var embeddingSkill = GetEmbeddingSkill(
-            apiKey: apiKey,
-            endpoint: AIServicesEndpoint ?? throw new NullReferenceException(nameof(AIServicesEndpoint))
-        );
-
-        // TODO: Lag en liste med alle skills
-        List<SearchIndexerSkill> skills = [
-            piiSkill,
-            splitSkill,
-            embeddingSkill
-        ];
-
-        // TODO: Deploy skillsettet til ressursen i Azure
-        SearchIndexerSkillset indexerSkillset = await CreateOrUpdateSearchIndexerSkillset(
-            indexerClient: SearchIndexerClient,
-            skills: skills,
-            aiServicesApiKey: apiKey
-        );
-
-        // TODO: Fjern denne når implementasjonen er klar
-        // throw new NotImplementedException();
-
-        return indexerSkillset;
     }
 
     public async Task GetIndexerStatus(SearchIndexer indexer)
