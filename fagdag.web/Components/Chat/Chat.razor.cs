@@ -45,10 +45,11 @@ public partial class Chat
                 
             userMessageText = null;
 
-            ChatRequest request = new ChatRequest(messages);
+            ChatRequest request = new(messages);
 
             // Add a temporary message that a response is being generated
-            Message assistantMessage = new Message() {
+            Message assistantMessage = new() 
+            {
                 IsAssistant = true,
                 Content = ""
             };
@@ -59,6 +60,7 @@ public partial class Chat
             OpenAI.Chat.ChatMessage[] chatMessages = [.. request.Messages.Select(x => new UserChatMessage(x.Content))];
 
             var message = await ChatHandler.GetCompletionsAsync(chatMessages);
+            var result = message.Value;
 
             // await foreach (var chunk in chunks)
             // {
@@ -66,7 +68,7 @@ public partial class Chat
             //     StateHasChanged();
             // }
 
-            assistantMessage.Content += message.Value.Content;
+            assistantMessage.Content += result.Content.FirstOrDefault()?.Text;
             StateHasChanged();
         }
     }

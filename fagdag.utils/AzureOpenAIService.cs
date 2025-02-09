@@ -3,6 +3,7 @@ using Azure.AI.OpenAI;
 using OpenAI.Chat;
 using System.ClientModel;
 using OpenAI.Embeddings;
+using Microsoft.Extensions.Configuration;
 
 namespace Fagdag.Utils;
 
@@ -19,25 +20,19 @@ public class AzureOpenAIService : IAzureOpenAIService
     private ChatClient ChatClient { get; }
     private EmbeddingClient? EmbeddingClient { get; }
 
-    public AzureOpenAIService(Uri endpoint,
-        string apiKey,
-        string deploymentName,
-        string embeddingDeploymentName,
-        AzureOpenAIClientOptions? options = null)
+    public AzureOpenAIService(IConfiguration configuration)
     {
-        ArgumentNullException.ThrowIfNull(endpoint);
-        ArgumentException.ThrowIfNullOrEmpty(deploymentName);
+        var azureOpenaiEndpoint = configuration[Constants.AzureOpenAIEndpoint];
+        var azureOpenaiApiKey = configuration[Constants.AzureOpenAIApiKey];
 
-        var client = string.IsNullOrEmpty(apiKey)
-            ? new AzureOpenAIClient(endpoint, new DefaultAzureCredential(), options)
-            : new AzureOpenAIClient(endpoint, new ApiKeyCredential(apiKey), options);
+        ArgumentException.ThrowIfNullOrEmpty(azureOpenaiEndpoint);
+        ArgumentException.ThrowIfNullOrEmpty(azureOpenaiApiKey);
 
-        if (!string.IsNullOrEmpty(embeddingDeploymentName))
-        {
-            EmbeddingClient = client.GetEmbeddingClient(embeddingDeploymentName);
-        }
+        var client = new AzureOpenAIClient(new Uri(azureOpenaiEndpoint), 
+            new ApiKeyCredential(azureOpenaiApiKey));
 
-        ChatClient = client.GetChatClient(deploymentName);
+        EmbeddingClient = client.GetEmbeddingClient(Constants.TextEmbedding3Large);
+        ChatClient = client.GetChatClient(Constants.Gpt4o);
     }
 
     public async Task<ReadOnlyMemory<float>> GetEmbeddingsAsync(string input, EmbeddingGenerationOptions? embeddingGenerationOptions = null)

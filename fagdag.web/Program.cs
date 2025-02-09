@@ -9,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddScoped<IAzureOpenAIService, AzureOpenAIService>();
+
 var app = builder.Build();
 var configuration = app.Configuration;
 
@@ -17,15 +19,6 @@ var azureOpenaiApiKey = configuration[Constants.AzureOpenAIApiKey];
 
 ArgumentException.ThrowIfNullOrEmpty(azureOpenaiEndpoint);
 ArgumentException.ThrowIfNullOrEmpty(azureOpenaiApiKey);
-
-// Configure AI related features
-var chatService = new AzureOpenAIService(
-    endpoint: new Uri(azureOpenaiEndpoint),
-    apiKey: azureOpenaiApiKey,
-    deploymentName: "gpt-4o",
-    embeddingDeploymentName: "text-embedding-3-large",
-    options: new()
-);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -40,7 +33,7 @@ app.UseStaticFiles();
 app.UseAntiforgery();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
-app.MapPost("/chat", async (ChatRequest request) => 
+app.MapPost("/chat", async (ChatRequest request, IAzureOpenAIService chatService) => 
 {
     ChatMessage[] chatMessages = [..request.Messages.Select(x => new UserChatMessage(x.Content))];
     await chatService.GetCompletionsAsync(chatMessages);
