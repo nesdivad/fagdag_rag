@@ -2,6 +2,7 @@ namespace Fagdag.Utils;
 
 public static class Constants
 {
+    public const string Username = "Username";
     public const string AzureOpenAIEndpoint = "AZURE_OPENAI_ENDPOINT";
     public const string AzureOpenAIApiKey = "AZURE_OPENAI_API_KEY";
     public const string AzureSearchEndpoint = "AZURE_SEARCH_ENDPOINT";

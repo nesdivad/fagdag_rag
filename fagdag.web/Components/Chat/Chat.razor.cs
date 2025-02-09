@@ -1,14 +1,15 @@
+using Fagdag.Utils;
 using Fagdag.Web.Model;
-using Fagdag.Web.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using OpenAI.Chat;
 
 namespace Fagdag.Web.Components.Chat;
 
 public partial class Chat
 {
     [Inject]
-    internal ChatService? ChatHandler { get; init; }
+    internal IAzureOpenAIService? ChatHandler { get; init; }
     readonly List<Message> messages = [];
     ElementReference writeMessageElement;
     string? userMessageText;
@@ -55,7 +56,9 @@ public partial class Chat
             messages.Add(assistantMessage);
             StateHasChanged();
 
-            var message = await ChatHandler.Chat(request);
+            OpenAI.Chat.ChatMessage[] chatMessages = [.. request.Messages.Select(x => new UserChatMessage(x.Content))];
+
+            var message = await ChatHandler.GetCompletionsAsync(chatMessages);
 
             // await foreach (var chunk in chunks)
             // {
@@ -63,7 +66,7 @@ public partial class Chat
             //     StateHasChanged();
             // }
 
-            assistantMessage.Content += message.Content;
+            assistantMessage.Content += message.Value.Content;
             StateHasChanged();
         }
     }

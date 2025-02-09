@@ -1,6 +1,7 @@
 using Azure;
 using Azure.Search.Documents.Indexes;
 using Azure.Search.Documents.Indexes.Models;
+using Microsoft.Extensions.Configuration;
 
 using System.ClientModel;
 
@@ -29,38 +30,39 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
     private ApiKeyCredential AIServicesApiKey { get; init; }
     private Uri? AIServicesEndpoint { get; init; }
 
-    public AzureSearchIndexerService(
-        string username,
-        string searchApiKey,
-        string searchEndpoint,
-        string aiServicesApiKey,
-        string aiServicesEndpoint,
-        string storageConnectionString)
+    public AzureSearchIndexerService(IConfiguration configuration)
     {
+        var username = configuration[Constants.Username];
+        var azureSearchApiKey = configuration[Constants.AzureSearchApiKey];
+        var azureSearchEndpoint = configuration[Constants.AzureSearchEndpoint];
+        var azureOpenaiApiKey = configuration[Constants.AzureOpenAIApiKey];
+        var azureOpenaiEndpoint = configuration[Constants.AzureOpenAIEndpoint];
+        var azureStorageConnectionString = configuration[Constants.AzureStorageConnectionString];
+
+        ArgumentException.ThrowIfNullOrEmpty(azureSearchApiKey);
+        ArgumentException.ThrowIfNullOrEmpty(azureSearchEndpoint);
+        ArgumentException.ThrowIfNullOrEmpty(azureOpenaiApiKey);
+        ArgumentException.ThrowIfNullOrEmpty(azureOpenaiEndpoint);
+        ArgumentException.ThrowIfNullOrEmpty(azureStorageConnectionString);
         ArgumentException.ThrowIfNullOrEmpty(username);
-        ArgumentException.ThrowIfNullOrEmpty(searchApiKey);
-        ArgumentException.ThrowIfNullOrEmpty(searchEndpoint);
-        ArgumentException.ThrowIfNullOrEmpty(aiServicesApiKey);
-        ArgumentException.ThrowIfNullOrEmpty(aiServicesEndpoint);
-        ArgumentException.ThrowIfNullOrEmpty(storageConnectionString);
 
         Username = username;
         IndexName = $"index_{Username}";
         IndexerName = $"indexer_{Username}";
 
-        SearchIndexClient = new(new Uri(searchEndpoint), new AzureKeyCredential(searchApiKey));
-        SearchIndexerClient = new(new Uri(searchEndpoint), new AzureKeyCredential(searchApiKey));
-        AIServicesApiKey = new(aiServicesApiKey);
+        SearchIndexClient = new(new Uri(azureSearchEndpoint), new AzureKeyCredential(azureSearchApiKey));
+        SearchIndexerClient = new(new Uri(azureSearchEndpoint), new AzureKeyCredential(azureSearchApiKey));
+        AIServicesApiKey = new(azureOpenaiApiKey);
 
         SearchIndexerDataSourceConnection dataSourceConnection = new(
             "fagdag",
             SearchIndexerDataSourceType.AzureBlob,
-            storageConnectionString,
+            azureStorageConnectionString,
             new SearchIndexerDataContainer("markdown")
         );
         try
         {
-            AIServicesEndpoint = new Uri(aiServicesEndpoint);
+            AIServicesEndpoint = new Uri(azureOpenaiEndpoint);
             SearchIndexerClient.CreateOrUpdateDataSourceConnection(dataSourceConnection);
         }
         catch (UriFormatException u)
@@ -278,6 +280,7 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         int pageOverlapLength = 500)
     {
         List<InputFieldMappingEntry> inputMappings = [
+            // legg merke til at source er output fra forrige skill (pii detection)
             new("text") { Source = "/document/maskedText" }
         ];
 
@@ -318,6 +321,7 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         ArgumentNullException.ThrowIfNull(endpoint);
 
         List<InputFieldMappingEntry> inputMappings = [
+            // legg merke til at source er output fra forrige skill (split skill)
             new("text") { Source = "/document/pages/*" }
         ];
         List<OutputFieldMappingEntry> outputMappings = [

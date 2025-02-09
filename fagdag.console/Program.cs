@@ -114,7 +114,7 @@ void DataFlow(IConfiguration configuration)
                 try
                 {
                     azureOpenAIService = CreateAzureOpenAIService(configuration);
-                    azureSearchIndexerService = CreateAzureSearchIndexerService(configuration, username);
+                    azureSearchIndexerService = CreateAzureSearchIndexerService(configuration);
 
                     Thread.Sleep(TimeSpan.FromMilliseconds(500));
 
@@ -177,6 +177,7 @@ void DataFlow(IConfiguration configuration)
     StepZero();
     PromptNext(prompt: "\nTrykk [teal]Enter[/] for å gå til neste steg.");
     username = CreateOrRetrieveUsername();
+    configuration[Constants.Username] = username;
 
     bool @return = false;
     do Select();
@@ -257,7 +258,31 @@ void TextProcessing()
 // Oppsett av indeks og indekserer
 static void IndexAndIndexer()
 {
+    void Information()
+    {
+        AnsiConsole.MarkupLine("[fuchsia]Indekserer:[/]");
+        AnsiConsole.MarkupLine("I dette steget skal vi konfigurere [aqua]AI Search Indexer[/]. Jobben til indekseren er å populere søkeindeksen med data.");
+        AnsiConsole.MarkupLine("Den henter først inn datasettet vårt fra en datakilde (som allerede er konfigurert), og så kjører den skillsettet på disse dataene.");
+        AnsiConsole.MarkupLine("\n[link blue]https://learn.microsoft.com/en-us/azure/search/search-indexer-overview[/]");
+    }
+
+    void Indexer()
+    {
+        AnsiConsole.MarkupLine("");
+    }
+
+    void Impl()
+    {
+    }
+    
+    Information();
     PromptNext();
+    RenderSeparator();
+    Indexer();
+    PromptNext();
+    RenderSeparator();
+    Impl();
+    PromptNext(prompt: "\nTrykk [teal]Enter[/] for å fullføre steget.");
 }
 
 // Kjøre indeksering, og alt rundt
@@ -357,28 +382,9 @@ static AzureOpenAIService CreateAzureOpenAIService(IConfiguration configuration)
     );
 }
 
-static AzureSearchIndexerService CreateAzureSearchIndexerService(IConfiguration configuration, string username)
+static AzureSearchIndexerService CreateAzureSearchIndexerService(IConfiguration configuration)
 {
-    var azureSearchApiKey = configuration[Constants.AzureSearchApiKey];
-    var azureSearchEndpoint = configuration[Constants.AzureSearchEndpoint];
-    var azureOpenaiApiKey = configuration[Constants.AzureOpenAIApiKey];
-    var azureOpenaiEndpoint = configuration[Constants.AzureOpenAIEndpoint];
-    var azureStorageConnectionString = configuration[Constants.AzureStorageConnectionString];
-
-    ArgumentException.ThrowIfNullOrEmpty(azureSearchApiKey);
-    ArgumentException.ThrowIfNullOrEmpty(azureSearchEndpoint);
-    ArgumentException.ThrowIfNullOrEmpty(azureOpenaiApiKey);
-    ArgumentException.ThrowIfNullOrEmpty(azureOpenaiEndpoint);
-    ArgumentException.ThrowIfNullOrEmpty(azureStorageConnectionString);
-
-    return new(
-        username: username,
-        searchApiKey: azureSearchApiKey,
-        searchEndpoint: azureSearchEndpoint,
-        aiServicesApiKey: azureOpenaiApiKey,
-        aiServicesEndpoint: azureOpenaiEndpoint,
-        storageConnectionString: azureStorageConnectionString
-    );
+    return new(configuration);
 }
 
 static string CreateOrRetrieveUsername()
