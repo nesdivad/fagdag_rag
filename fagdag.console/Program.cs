@@ -461,11 +461,11 @@ async Task Test()
     var stepZeroSuccess = TestStepZero();
     if (!stepZeroSuccess) return;
 
-    var stepOneSuccess = await TestStepOne();
-    if (!stepOneSuccess) return;
-    
     var stepTwoSuccess = await TestStepTwo();
     if (!stepTwoSuccess) return;
+
+    var stepOneSuccess = await TestStepOne();
+    if (!stepOneSuccess) return;
 
     var stepThreeSuccess = await TestStepThree();
     if (!stepThreeSuccess) return;

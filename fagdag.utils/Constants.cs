@@ -13,4 +13,6 @@ public static class Constants
     public const string AzureOpenAIEmbeddingEndpoint = "AZURE_OPENAI_EMBEDDING_ENDPOINT";
     public const string Gpt4o = "gpt-4o";
     public const string TextEmbedding3Large = "text-embedding-3-large";
+    public const string HnswProfile = "hnswProfile";
+    public const string OpenAIVectorizer = "OpenAIVectorizer";
 }
