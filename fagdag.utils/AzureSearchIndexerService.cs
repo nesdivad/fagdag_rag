@@ -162,10 +162,10 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
             TargetFieldName = "content"
         });
 
-        indexer.OutputFieldMappings.Add(new("/document/pages/*/vector")
-        {
-            TargetFieldName = "vector"
-        });
+        // indexer.OutputFieldMappings.Add(new("/document/pages/*/vector")
+        // {
+        //     TargetFieldName = "vector"
+        // });
 
         indexer = await SearchIndexerClient.CreateOrUpdateIndexerAsync(indexer);
 

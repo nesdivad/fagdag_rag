@@ -444,7 +444,7 @@ async Task<bool> TestStepThree()
                 ArgumentNullException.ThrowIfNull(azureSearchIndexerService);
                 var indexer = await azureSearchIndexerService.CreateOrUpdateIndexerAsync();
                 Sleep();
-                AnsiConsole.MarkupLineInterpolated($"[green]Test av indekserer vellykket! Indekserer med navn {indexer.Name} er opprettet.[/]\n :check_mark_button:");
+                AnsiConsole.MarkupLineInterpolated($"[green]Test av indekserer vellykket! Indekserer med navn {indexer.Name} er opprettet.[/] :check_mark_button:");
                 successful = true;
             }
             catch (Exception e)
