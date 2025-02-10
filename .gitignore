@@ -4,3 +4,4 @@ notebooks/.venv
 notebooks/fagdag
 notebooks/markdown
 fagdag.console/user.txt
+**/appsettings.Development.json

@@ -1,5 +1,6 @@
 # Generativ AI med RAG
 
-## Idéer
+## Idéer og fikser
 
-- Alternativ buffer med chat mot en `*-mini`-modell.
+- ~~Alternativ buffer med chat mot en `*-mini`-modell.~~ Bruk web-prosjektet.
+- Lag en bedre løsning for filer som `appsettings.json` og `user.txt`

@@ -1,4 +1,3 @@
-using Azure.Identity;
 using Azure.AI.OpenAI;
 using OpenAI.Chat;
 using System.ClientModel;
@@ -9,18 +8,29 @@ namespace Fagdag.Utils;
 
 public interface IAzureOpenAIService
 {
-    Task<ReadOnlyMemory<float>> GetEmbeddingsAsync(string input, EmbeddingGenerationOptions? embeddingGenerationOptions = null);
-    ClientResult<ChatCompletion> GetCompletions(ChatMessage[] chatMessages, ChatCompletionOptions? options = null);
-    Task<ClientResult<ChatCompletion>> GetCompletionsAsync(ChatMessage[] chatMessages, ChatCompletionOptions? options = null);
-    IAsyncEnumerable<StreamingChatCompletionUpdate> GetCompletionsStreamingAsync(ChatMessage[] chatMessages, ChatCompletionOptions? options = null);
+    Task<ReadOnlyMemory<float>> GetEmbeddingsAsync(
+        string input, 
+        EmbeddingGenerationOptions? options = null
+    );
+    Task<ClientResult<ChatCompletion>> GetCompletionsAsync(
+        ChatMessage[] chatMessages, 
+        ChatCompletionOptions? options = null
+    );
+    IAsyncEnumerable<StreamingChatCompletionUpdate> GetCompletionsStreamingAsync(
+        ChatMessage[] chatMessages, 
+        ChatCompletionOptions? options = null
+    );
 }
 
 public class AzureOpenAIService : IAzureOpenAIService
 {
     private ChatClient ChatClient { get; }
     private EmbeddingClient? EmbeddingClient { get; }
+    private IAzureSearchIndexService SearchIndexService { get; }
 
-    public AzureOpenAIService(IConfiguration configuration)
+    public AzureOpenAIService(
+        IConfiguration configuration, 
+        IAzureSearchIndexService azureSearchIndexService)
     {
         var azureOpenaiEndpoint = configuration[Constants.AzureOpenAIEndpoint];
         var azureOpenaiApiKey = configuration[Constants.AzureOpenAIApiKey];
@@ -33,34 +43,48 @@ public class AzureOpenAIService : IAzureOpenAIService
 
         EmbeddingClient = client.GetEmbeddingClient(Constants.TextEmbedding3Large);
         ChatClient = client.GetChatClient(Constants.Gpt4o);
+
+        SearchIndexService = azureSearchIndexService;
     }
 
-    public async Task<ReadOnlyMemory<float>> GetEmbeddingsAsync(string input, EmbeddingGenerationOptions? embeddingGenerationOptions = null)
+    public async Task GetRagCompletionsAsync(
+        ChatMessage chatMessage, 
+        ChatCompletionOptions? options = null)
+    {
+        // TODO: Hent embeddings for chatMessage
+        // Dimensions må settes til 1536, da det er denne størrelsen som brukes i Embedding skill
+        var embeddings = await GetEmbeddingsAsync(
+            input: chatMessage.Content[0].Text, 
+            options: new() { Dimensions = 1536 }
+        );
+        
+        // TODO: Søk etter dokumenter
+        
+        // TODO: Hent ut relevant info fra dokumentene, og mat dem inn i prompten.
+
+        // TODO: GetCompletionsAsync(...)
+
+        // TODO: Fjern denne når du er ferdig
+        throw new NotImplementedException();
+    }
+
+    public async Task<ReadOnlyMemory<float>> GetEmbeddingsAsync(
+        string input, 
+        EmbeddingGenerationOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(EmbeddingClient);
-        embeddingGenerationOptions ??= new()
+        options ??= new()
         {
             Dimensions = 1536
         };
 
-        var result = await EmbeddingClient.GenerateEmbeddingAsync(input, embeddingGenerationOptions);
+        var result = await EmbeddingClient.GenerateEmbeddingAsync(input, options);
         return result.Value.ToFloats();
     }
 
-    public ClientResult<ChatCompletion> GetCompletions(ChatMessage[] chatMessages, ChatCompletionOptions? options = null)
-    {
-        options ??= new()
-        {
-            ResponseFormat = ChatResponseFormat.CreateTextFormat(),
-            MaxOutputTokenCount = 2048,
-            StoredOutputEnabled = false,
-            Temperature = 0.4f
-        };
-
-        return ChatClient.CompleteChat(chatMessages, options);
-    }
-
-    public async Task<ClientResult<ChatCompletion>> GetCompletionsAsync(ChatMessage[] chatMessages, ChatCompletionOptions? options = null)
+    public async Task<ClientResult<ChatCompletion>> GetCompletionsAsync(
+        ChatMessage[] chatMessages, 
+        ChatCompletionOptions? options = null)
     {
         options ??= new()
         {
@@ -73,7 +97,9 @@ public class AzureOpenAIService : IAzureOpenAIService
         return await ChatClient.CompleteChatAsync(chatMessages, options);
     }
 
-    public async IAsyncEnumerable<StreamingChatCompletionUpdate> GetCompletionsStreamingAsync(ChatMessage[] chatMessages, ChatCompletionOptions? options = null)
+    public async IAsyncEnumerable<StreamingChatCompletionUpdate> GetCompletionsStreamingAsync(
+        ChatMessage[] chatMessages, 
+        ChatCompletionOptions? options = null)
     {
         options ??= new()
         {

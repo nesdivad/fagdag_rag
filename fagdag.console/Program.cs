@@ -13,8 +13,9 @@ var configuration = app.Services.GetRequiredService<IConfiguration>();
 
 
 string username = string.Empty;
-AzureOpenAIService? azureOpenAIService;
-AzureSearchIndexerService? azureSearchIndexerService;
+AzureOpenAIService? azureOpenAIService = null;
+AzureSearchIndexService? azureSearchIndexService = null;
+AzureSearchIndexerService? azureSearchIndexerService = null;
 
 Start();
 
@@ -56,10 +57,9 @@ void DataFlow(IConfiguration configuration)
 {
     string[] choices = [
         "1. Konfigurer skills og skillset",
-        "2. Opprett indekserer",
-        "3. Lag embeddings",
-        "4. Lagre embeddings i database",
-        "5. [lime]Test hele løsningen![/]"
+        "2. Opprett indeks",
+        "3. Opprett indekserer",
+        "4. Test hele løsningen!"
     ];
 
     void Information()
@@ -86,7 +86,10 @@ void DataFlow(IConfiguration configuration)
                 "AZURE_OPENAI_ENDPOINT": "",
                 "AZURE_SEARCH_API_KEY": "",
                 "AZURE_SEARCH_ENDPOINT": "",
-                "AZURE_STORAGE_CONNECTION_STRING": ""
+                "AZURE_COGNITIVESERVICES_API_KEY": "",
+                "AZURE_COGNITIVESERVICES_ENDPOINT": "",
+                "AZURE_STORAGE_CONNECTION_STRING": "",
+                "AZURE_OPENAI_EMBEDDING_ENDPOINT": ""
             }
             """
         );
@@ -101,39 +104,6 @@ void DataFlow(IConfiguration configuration)
                 .BorderColor(Color.Yellow)
         );
         AnsiConsole.MarkupLine("Verdiene ligger i et [yellow]Keeper[/]-dokument, og deles med deg.");
-    }
-
-    bool TestStepZero()
-    {
-        bool successful = false;
-        AnsiConsole.Status()
-            .Spinner(Spinner.Known.Default)
-            .Start("Kjører test av konfigurasjon...", ctx =>
-            {
-                AnsiConsole.Write("\n");
-                try
-                {
-                    azureOpenAIService = CreateAzureOpenAIService(configuration);
-                    azureSearchIndexerService = CreateAzureSearchIndexerService(configuration);
-
-                    Thread.Sleep(TimeSpan.FromMilliseconds(500));
-
-                    AnsiConsole.MarkupLine("[green]Test av konfigurasjon vellykket![/]");
-                    successful = true;
-                }
-                catch (ArgumentException ex)
-                {
-                    AnsiConsole.MarkupLine($"Testen gikk ikke som forventet!\n[red]{ex.Message}[/]");
-                    successful = false;
-                }
-                catch (UriFormatException ex)
-                {
-                    AnsiConsole.MarkupLine($"Vennligst sjekk formatet på endepunktene!\n[red]{ex.Message}[/]");
-                    successful = false;
-                }
-            });
-
-        return successful;
     }
 
     void Select()
@@ -154,10 +124,10 @@ void DataFlow(IConfiguration configuration)
                 TextProcessing();
                 break;
             case 1:
-                IndexAndIndexer();
+                Index();
                 break;
             case 2:
-                RunIndexer();
+                Indexer();
                 break;
             case 3:
                 TestIndex();
@@ -255,8 +225,40 @@ void TextProcessing()
     PromptNext(prompt: "\nTrykk [teal]Enter[/] for å fullføre steget.");
 }
 
+static void Index()
+{
+    void Information()
+    {
+        AnsiConsole.MarkupLine("[fuchsia]Indeks:[/]");
+        AnsiConsole.MarkupLine("Nå skal du sette opp en indeks i [blue]Azure AI Search[/]. En indeks består av søkbart innhold, og brukes som datakilde når du senere skal sette opp RAG-flyten for chatgrensesnittet.");
+        AnsiConsole.MarkupLine("En indeks inneholder [lime]dokumenter[/]. Hvert dokument er en søkbar 'enhet' i indeksen, og kan dermed deles opp forskjellig, avhengig av din applikasjon.");
+        AnsiConsole.MarkupLine("Hver indeks er definert av et JSON-skjema, som inneholder informasjon om felter i dokumentet og annen metadata.");
+
+        AnsiConsole.MarkupLine("\n [link blue]https://learn.microsoft.com/en-us/azure/search/search-what-is-an-index[/]");
+    }
+
+    void Index()
+    {
+        // Informasjon om indeks-skjema
+        
+    }
+
+    void Impl()
+    {
+
+    }
+
+    Information(); 
+    PromptNext(); 
+    RenderSeparator(); 
+    Index(); 
+    PromptNext(); 
+    Impl(); 
+    PromptNext(prompt: "\nTrykk [teal]Enter[/] for å fullføre steget.");
+}
+
 // Oppsett av indeks og indekserer
-static void IndexAndIndexer()
+static void Indexer()
 {
     void Information()
     {
@@ -292,8 +294,9 @@ static void RunIndexer()
 }
 
 // Test indeks, mulighet til å søke på dokumenter i indeksen
-static void TestIndex()
+void TestIndex()
 {
+    Task.Run(Test).Wait();
     PromptNext();
 }
 
@@ -343,6 +346,74 @@ static void Goodbye()
 
 #endregion
 
+#region [ Tests ]
+
+bool TestStepZero()
+{
+    bool successful = false;
+    AnsiConsole.Status()
+        .Spinner(Spinner.Known.Default)
+        .Start("Kjører test av konfigurasjon...", ctx =>
+        {
+            AnsiConsole.Write("\n");
+            try
+            {
+                azureSearchIndexService = CreateAzureSearchIndexService(configuration);
+                azureOpenAIService = CreateAzureOpenAIService(configuration, azureSearchIndexService);
+                azureSearchIndexerService = CreateAzureSearchIndexerService(configuration);
+
+                Thread.Sleep(TimeSpan.FromMilliseconds(500));
+
+                AnsiConsole.MarkupLine("[green]Test av konfigurasjon i appsettings.json[/] :check_mark_button:");
+                successful = true;
+            }
+            catch (ArgumentException ex)
+            {
+                AnsiConsole.MarkupLine($"Testen gikk ikke som forventet!\n[red]{ex.Message}[/]");
+                successful = false;
+            }
+            catch (UriFormatException ex)
+            {
+                AnsiConsole.MarkupLine($"Vennligst sjekk formatet på endepunktene!\n[red]{ex.Message}[/]");
+                successful = false;
+            }
+        });
+
+    return successful;
+}
+
+async Task<bool> TestStepOne()
+{
+    bool successful = false;
+    await AnsiConsole.Status()
+        .Spinner(Spinner.Known.Default)
+        .StartAsync("Oppretter skillsets...", async ctx => 
+        {
+            try
+            {
+                ArgumentNullException.ThrowIfNull(azureSearchIndexerService);
+                var skillset = await azureSearchIndexerService.CreateSkillsetAsync();
+                Thread.Sleep(TimeSpan.FromMilliseconds(500));
+                AnsiConsole.MarkupLine($"[green]Test av skillsets vellykket! Skillset med navn {skillset.Name} er opprettet.[/] :check_mark_button:");
+                successful = true;
+            }
+            catch (Exception)
+            {
+                AnsiConsole.MarkupLine($"[red]Noe gikk galt under oppretting av skillsets.\n[/]");
+            }
+        });
+
+    return successful;
+}
+
+async Task Test()
+{
+    var stepZeroSuccess = TestStepZero();
+    var stepOneSuccess = await TestStepOne();
+}
+
+#endregion
+
 #region [ Helpers ]
 
 static void PromptNext(string prompt = "\nTrykk [teal]Enter[/] for å gå videre.")
@@ -363,7 +434,9 @@ static void RenderUsername(string username)
 
 static void RenderSeparator() => AnsiConsole.Write(new Rule().HeavyBorder());
 
-static AzureOpenAIService CreateAzureOpenAIService(IConfiguration configuration)
+static AzureOpenAIService CreateAzureOpenAIService(
+    IConfiguration configuration, 
+    IAzureSearchIndexService azureSearchIndexService)
 {
     var azureOpenaiEndpoint = configuration[Constants.AzureOpenAIEndpoint];
     var azureOpenaiApiKey = configuration[Constants.AzureOpenAIApiKey];
@@ -373,19 +446,14 @@ static AzureOpenAIService CreateAzureOpenAIService(IConfiguration configuration)
 
     var resourceUri = new Uri(azureOpenaiEndpoint);
 
-    return new(
-        endpoint: resourceUri,
-        apiKey: azureOpenaiApiKey,
-        deploymentName: Constants.Gpt4o,
-        embeddingDeploymentName: Constants.TextEmbedding3Large,
-        new() { NetworkTimeout = TimeSpan.FromSeconds(30) }
-    );
+    return new(configuration, azureSearchIndexService);
 }
 
+static AzureSearchIndexService CreateAzureSearchIndexService(IConfiguration configuration)
+    => new(configuration);
+
 static AzureSearchIndexerService CreateAzureSearchIndexerService(IConfiguration configuration)
-{
-    return new(configuration);
-}
+    => new(configuration);
 
 static string CreateOrRetrieveUsername()
 {
@@ -398,7 +466,7 @@ static string CreateOrRetrieveUsername()
     else
     {
         var rand = new Random();
-        var user = $"u_{rand.Next(0, 1_000_000)}";
+        var user = $"u{rand.Next(0, 1_000_000)}";
         File.WriteAllText(filename, user);
         return user;
     }
