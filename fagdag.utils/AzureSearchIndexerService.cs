@@ -9,7 +9,7 @@ namespace Fagdag.Utils;
 
 public interface IAzureSearchIndexerService
 {
-    Task GetIndexerStatus(SearchIndexer indexer);
+    Task<IndexerExecutionResult> GetIndexerStatus(SearchIndexer indexer);
     Task<SearchIndexer> CreateOrUpdateIndexerAsync();
     Task<SearchIndexerSkillset> CreateSkillsetAsync();
 }
@@ -27,7 +27,6 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
     private ApiKeyCredential AzureOpenaiApiKey { get; }
     private ApiKeyCredential CognitiveServicesApiKey { get; }
     private Uri? AzureOpenaiEndpoint { get; }
-    private Uri? AzureCognitiveServicesEndpoint { get; }
 
     public AzureSearchIndexerService(IConfiguration configuration)
     {
@@ -38,13 +37,11 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         var azureStorageConnectionString = configuration[Constants.AzureStorageConnectionString];
         var azureOpenaiEmbeddingEndpoint = configuration[Constants.AzureOpenAIEmbeddingEndpoint];
         var azureCognitiveServicesApiKey = configuration[Constants.AzureCognitiveServicesApiKey];
-        var azureCognitiveServicesEndpoint = configuration[Constants.AzureCognitiveServicesEndpoint];
 
         ArgumentException.ThrowIfNullOrEmpty(azureSearchApiKey);
         ArgumentException.ThrowIfNullOrEmpty(azureSearchEndpoint);
         ArgumentException.ThrowIfNullOrEmpty(azureOpenaiApiKey);
         ArgumentException.ThrowIfNullOrEmpty(azureCognitiveServicesApiKey);
-        ArgumentException.ThrowIfNullOrEmpty(azureCognitiveServicesEndpoint);
         ArgumentException.ThrowIfNullOrEmpty(azureStorageConnectionString);
         ArgumentException.ThrowIfNullOrEmpty(azureOpenaiEmbeddingEndpoint);
         ArgumentException.ThrowIfNullOrEmpty(username);
@@ -68,7 +65,6 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         try
         {
             AzureOpenaiEndpoint = new Uri(azureOpenaiEmbeddingEndpoint);
-            AzureCognitiveServicesEndpoint = new Uri(azureCognitiveServicesEndpoint);
             SearchIndexerClient.CreateOrUpdateDataSourceConnection(dataSourceConnection);
         }
         catch (UriFormatException u)
@@ -96,8 +92,8 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         var piiSkill = GetPiiDetectionSkill();
 
         var splitSkill = GetSplitSkill(
-            maximumPageLength: 1000,
-            pageOverlapLength: 250
+            maximumPageLength: 2000,
+            pageOverlapLength: 500
         );
         
         var embeddingSkill = GetEmbeddingSkill(
@@ -112,13 +108,15 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
             embeddingSkill
         ];
 
+        // Prosjekter felter fra skillset over til dokumentet i indeksen
         IList<SearchIndexerIndexProjectionSelector> selectors = [
             new SearchIndexerIndexProjectionSelector(
                 targetIndexName: IndexName, 
                 parentKeyFieldName: "parent_id", 
                 sourceContext: "/document/pages/*",
                 mappings: [
-                    new("vector") { Source = "/document/pages/*/vector" }
+                    new("vector") { Source = "/document/pages/*/vector" },
+                    new("chunk") { Source = "/document/pages/*" }
                 ]
             )
         ];
@@ -127,6 +125,7 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         {
             Parameters = new SearchIndexerIndexProjectionsParameters() 
             { 
+                // Siden vi splitter opp et dokument i mange, får vi en "parent". Vi ønsker ikke å indeksere denne.
                 ProjectionMode = IndexProjectionMode.SkipIndexingParentDocuments 
             }
         };
@@ -152,6 +151,7 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         try
         {
             await SearchIndexerClient.GetIndexerAsync(indexerName: IndexerName);
+            await SearchIndexerClient.DeleteIndexerAsync(indexerName: IndexerName);
         }
         catch (RequestFailedException ex) when (ex.Status is 404) { }
 
@@ -177,38 +177,15 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
             SkillsetName = SkillsetName 
         };
 
-        indexer.FieldMappings.Add(new("content")
-        {
-            TargetFieldName = "content"
-        });
-
-        // indexer.OutputFieldMappings.Add(new("/document/pages/*/vector")
-        // {
-        //     TargetFieldName = "vector"
-        // });
-
         indexer = await SearchIndexerClient.CreateOrUpdateIndexerAsync(indexer);
 
         return indexer;
     }
 
-    public async Task GetIndexerStatus(SearchIndexer indexer)
-    {
-        try
-        {
-            var executionInfo = await SearchIndexerClient.GetIndexerStatusAsync(indexer.Name);
-            switch (executionInfo.Value.Status)
-            {
-                case IndexerStatus.Running: Console.WriteLine("Indexer is running ..."); break;
-                case IndexerStatus.Unknown: Console.WriteLine("Indexer status unknown."); break;
-                case IndexerStatus.Error: Console.WriteLine("Indexer returned an error =("); break;
-                default: break;
-            };
-        }
-        catch (RequestFailedException e)
-        {
-            Console.WriteLine($"En feil oppsto under henting av status for indekserer.\n{e.Message}");
-        }
+    public async Task<IndexerExecutionResult> GetIndexerStatus(SearchIndexer indexer)
+    {               
+        var indexerStatus = await SearchIndexerClient.GetIndexerStatusAsync(indexer.Name);
+        return indexerStatus.Value.LastResult;   
     }
 
     private async Task<SearchIndexerSkillset?> GetSkillsetAsync(string skillsetName)

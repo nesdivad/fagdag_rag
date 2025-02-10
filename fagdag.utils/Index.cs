@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
 using Azure.Search.Documents.Indexes;
@@ -17,8 +16,8 @@ public class Index
     public string ParentId { get; set; }
 
     [SearchableField(AnalyzerName = LexicalAnalyzerName.Values.NoLucene)]
-    [JsonPropertyName("content")]
-    public string Content { get; set; }
+    [JsonPropertyName("chunk")]
+    public string Chunk { get; set; }
 
     [SearchableField]
     [JsonPropertyName("languageCode")]
@@ -27,7 +26,6 @@ public class Index
     [VectorSearchField(
         VectorSearchDimensions = 1536, 
         VectorSearchProfileName = Constants.HnswProfile
-        // ,VectorEncodingFormat = VectorEncodingFormat.Values.PackedBit
     )]
     [SearchableField]
     [JsonPropertyName("vector")]

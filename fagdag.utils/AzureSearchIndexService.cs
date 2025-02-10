@@ -47,7 +47,8 @@ public class AzureSearchIndexService : IAzureSearchIndexService
     {
         ApiKeyCredential.Deconstruct(out string apiKey);
 
-        // For å unngå oppretting av nye indekser gjøres det først en get
+        // Dersom indeks eksisterer, slett og opprett ny
+        // Vil ikke anbefale denne metoden i prod ...
         try
         {
             var result = await SearchIndexClient.GetIndexAsync(IndexName);
@@ -55,20 +56,20 @@ public class AzureSearchIndexService : IAzureSearchIndexService
         }
         catch (RequestFailedException ex) when (ex.Status is 404) { }
 
-        // TODO: Definér skjemaet for indeksen
-        // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.fieldbuilder?view=azure-dotnet
-
-        
+        // Før vi kan søke i indeksen må søkefrasen gjøres om til en vektor.
+        // Det konfigurerer vi her, slik at vi slipper å ha et eget steg for dette i RAG-pipeline.
         var vectorSearch = new VectorSearch();
         vectorSearch.Algorithms.Add(
+            // Nærmeste nabo søketeknikk
             new HnswAlgorithmConfiguration(Constants.HnswProfile)
             {
                 Parameters = new()
                 {
+                    // Denne verdien må brukes når vi benytter OpenAI
                     Metric = VectorSearchAlgorithmMetric.Cosine,
-                    M = 4,
-                    EfConstruction = 400,
-                    EfSearch = 500
+
+                    // Something something bi-directional links ¯\_(ツ)_/¯
+                    M = 4
                 }
             }
         );
@@ -78,6 +79,7 @@ public class AzureSearchIndexService : IAzureSearchIndexService
             { VectorizerName = Constants.OpenAIVectorizer }
         );
 
+        // Konfig for Azure OpenAI Embeddings for å gjøre søkefraser om til embeddings
         vectorSearch.Vectorizers.Add(
             new AzureOpenAIVectorizer(Constants.OpenAIVectorizer)
             {
@@ -91,12 +93,20 @@ public class AzureSearchIndexService : IAzureSearchIndexService
             }
         );
 
-        // TODO: Lag en instans av søkeindeksen
-        // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.models.searchindex?view=azure-dotnet
+        // TODO: Definér skjemaet for indeksen ved å bruke 'FieldBuilder'-klassen for å bygge en liste med search fields av typen 'SearchField'.
+        // Dette skjemaet brukes når du senere skal søke etter dokumenter som en del av RAG-pipelinen.
 
+        // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.fieldbuilder?view=azure-dotnet
         FieldBuilder builder = new();
         IList<SearchField> fields = builder.Build(typeof(Index));
 
+        // TODO: Lag en instans av søkeindeksen, og inkluder:
+        // indeksnavn
+        // felter (som du lagde i forrige steg)
+        // Similarity skal settes til BM25Similarity
+        // vectorSearch-instansen
+
+        // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.models.searchindex?view=azure-dotnet
         SearchIndex searchIndex = new(IndexName, fields)
         {
             Similarity = new BM25Similarity(),

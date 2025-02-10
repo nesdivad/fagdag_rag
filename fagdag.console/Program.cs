@@ -1,3 +1,5 @@
+using Azure.Search.Documents.Indexes.Models;
+
 using Fagdag.Utils;
 
 using Microsoft.Extensions.Configuration;
@@ -10,7 +12,6 @@ using Spectre.Console.Json;
 var host = Host.CreateApplicationBuilder(args);
 var app = host.Build();
 var configuration = app.Services.GetRequiredService<IConfiguration>();
-
 
 string username = string.Empty;
 AzureOpenAIService? azureOpenAIService = null;
@@ -364,7 +365,7 @@ bool TestStepZero()
 
                 Sleep();
 
-                AnsiConsole.MarkupLine("[green]Test av konfigurasjon i appsettings.json[/] :check_mark_button:");
+                AnsiConsole.MarkupLine("Test av konfigurasjon i appsettings.json :check_mark_button:");
                 successful = true;
             }
             catch (ArgumentException ex)
@@ -384,30 +385,6 @@ bool TestStepZero()
 
 async Task<bool> TestStepOne()
 {
-    bool successful = false;
-    await AnsiConsole.Status()
-        .Spinner(Spinner.Known.Default)
-        .StartAsync("Oppretter skillsets...", async ctx => 
-        {
-            try
-            {
-                ArgumentNullException.ThrowIfNull(azureSearchIndexerService);
-                var skillset = await azureSearchIndexerService.CreateSkillsetAsync();
-                Sleep();
-                AnsiConsole.MarkupLine($"[green]Test av skillsets vellykket! Skillset med navn {skillset.Name} er opprettet.[/] :check_mark_button:");
-                successful = true;
-            }
-            catch (Exception)
-            {
-                AnsiConsole.MarkupLine($"[red]Noe gikk galt under oppretting av skillsets.[/]\n");
-            }
-        });
-
-    return successful;
-}
-
-async Task<bool> TestStepTwo()
-{
     var successful = false;
 
     await AnsiConsole.Status()
@@ -419,7 +396,7 @@ async Task<bool> TestStepTwo()
                 ArgumentNullException.ThrowIfNull(azureSearchIndexService);
                 var index = await azureSearchIndexService.CreateOrUpdateSearchIndexAsync();
                 Sleep();
-                AnsiConsole.MarkupLineInterpolated($"[green]Test av indeks vellykket! Indeks med navn {index.Name} er opprettet.[/] :check_mark_button:");
+                AnsiConsole.MarkupLineInterpolated($"Test av indeks vellykket! Indeks med navn {index.Name} er opprettet. :check_mark_button:");
                 successful = true;
             }
             catch (Exception e)
@@ -431,6 +408,31 @@ async Task<bool> TestStepTwo()
     return successful;
 }
 
+async Task<bool> TestStepTwo()
+{
+    bool successful = false;
+    await AnsiConsole.Status()
+        .Spinner(Spinner.Known.Default)
+        .StartAsync("Oppretter skillsets...", async ctx => 
+        {
+            try
+            {
+                ArgumentNullException.ThrowIfNull(azureSearchIndexerService);
+                var skillset = await azureSearchIndexerService.CreateSkillsetAsync();
+                Sleep();
+                AnsiConsole.MarkupLine($"Test av skillsets vellykket! Skillset med navn {skillset.Name} er opprettet. :check_mark_button:");
+                successful = true;
+            }
+            catch (Exception)
+            {
+                AnsiConsole.MarkupLine($"[red]Noe gikk galt under oppretting av skillsets.[/]\n");
+            }
+        });
+
+    return successful;
+}
+
+
 async Task<bool> TestStepThree()
 {
     var successful = false;
@@ -439,17 +441,38 @@ async Task<bool> TestStepThree()
         .Spinner(Spinner.Known.Default)
         .StartAsync("Oppretter indekserer...", async ctx => 
         {
+            ArgumentNullException.ThrowIfNull(azureSearchIndexerService);
+            SearchIndexer? indexer = null;
             try
             {
-                ArgumentNullException.ThrowIfNull(azureSearchIndexerService);
-                var indexer = await azureSearchIndexerService.CreateOrUpdateIndexerAsync();
-                Sleep();
-                AnsiConsole.MarkupLineInterpolated($"[green]Test av indekserer vellykket! Indekserer med navn {indexer.Name} er opprettet.[/] :check_mark_button:");
+                indexer = await azureSearchIndexerService.CreateOrUpdateIndexerAsync();
+
+                AnsiConsole.MarkupLineInterpolated($"Test av indekserer vellykket! Indekserer med navn {indexer.Name} er opprettet. :check_mark_button:");
                 successful = true;
             }
             catch (Exception e)
             {
                 AnsiConsole.MarkupLineInterpolated($"Noe gikk galt under oppretting av indekserer.\n{e.Message} {e.StackTrace}");
+            }
+
+            try
+            {
+                ArgumentNullException.ThrowIfNull(indexer);
+                ctx.Status("Sjekker status til indekserer ...");
+                IndexerExecutionResult? indexerStatus = default;
+
+                do 
+                {
+                    Sleep(milliseconds: 4000);
+                    indexerStatus = await azureSearchIndexerService.GetIndexerStatus(indexer);
+                    AnsiConsole.MarkupLineInterpolated($"Status for indekserer: {indexerStatus?.Status.ToString()}");
+                }
+                while (indexerStatus?.Status == IndexerExecutionStatus.InProgress);
+            }
+            catch (Exception e)
+            {
+                AnsiConsole.MarkupLineInterpolated($"{e.Message} {e.StackTrace}");
+                AnsiConsole.MarkupLine("[red]Noe gikk galt under sjekk av status på indekserer.[/]");
             }
         });
 
@@ -461,11 +484,11 @@ async Task Test()
     var stepZeroSuccess = TestStepZero();
     if (!stepZeroSuccess) return;
 
-    var stepTwoSuccess = await TestStepTwo();
-    if (!stepTwoSuccess) return;
-
     var stepOneSuccess = await TestStepOne();
     if (!stepOneSuccess) return;
+
+    var stepTwoSuccess = await TestStepTwo();
+    if (!stepTwoSuccess) return;
 
     var stepThreeSuccess = await TestStepThree();
     if (!stepThreeSuccess) return;
@@ -497,14 +520,6 @@ static AzureOpenAIService CreateAzureOpenAIService(
     IConfiguration configuration, 
     IAzureSearchIndexService azureSearchIndexService)
 {
-    var azureOpenaiEndpoint = configuration[Constants.AzureOpenAIEndpoint];
-    var azureOpenaiApiKey = configuration[Constants.AzureOpenAIApiKey];
-
-    ArgumentException.ThrowIfNullOrEmpty(azureOpenaiEndpoint);
-    ArgumentException.ThrowIfNullOrEmpty(azureOpenaiApiKey);
-
-    var resourceUri = new Uri(azureOpenaiEndpoint);
-
     return new(configuration, azureSearchIndexService);
 }
 
@@ -531,6 +546,6 @@ static string CreateOrRetrieveUsername()
     }
 }
 
-void Sleep() => Thread.Sleep(TimeSpan.FromMilliseconds(500));
+void Sleep(long milliseconds = 500) => Thread.Sleep(TimeSpan.FromMilliseconds(milliseconds));
 
 #endregion
