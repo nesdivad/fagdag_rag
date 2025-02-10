@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
 using Azure.Search.Documents.Indexes;
@@ -7,9 +8,13 @@ namespace Fagdag.Utils;
 
 public class Index
 {
-    [SearchableField(IsSortable = true, IsKey = true)]
+    [SearchableField(IsSortable = true, IsKey = true, AnalyzerName = "keyword")]
     [JsonPropertyName("id")]
     public string Id { get; set; }
+
+    [JsonPropertyName("parent_id")]
+    [SearchableField(IsFilterable = true)]
+    public string ParentId { get; set; }
 
     [SearchableField(AnalyzerName = LexicalAnalyzerName.Values.NoLucene)]
     [JsonPropertyName("content")]
@@ -18,4 +23,13 @@ public class Index
     [SearchableField]
     [JsonPropertyName("languageCode")]
     public string LanguageCode { get; set; }
+
+    [VectorSearchField(
+        VectorSearchDimensions = 1536, 
+        VectorSearchProfileName = Constants.HnswProfile
+        // ,VectorEncodingFormat = VectorEncodingFormat.Values.PackedBit
+    )]
+    [SearchableField]
+    [JsonPropertyName("vector")]
+    public float[] Vector { get; set; }
 }

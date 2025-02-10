@@ -112,9 +112,29 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
             embeddingSkill
         ];
 
+        IList<SearchIndexerIndexProjectionSelector> selectors = [
+            new SearchIndexerIndexProjectionSelector(
+                targetIndexName: IndexName, 
+                parentKeyFieldName: "parent_id", 
+                sourceContext: "/document/pages/*",
+                mappings: [
+                    new("vector") { Source = "/document/pages/*/vector" }
+                ]
+            )
+        ];
+
+        SearchIndexerIndexProjection indexProjection = new(selectors: selectors)
+        {
+            Parameters = new SearchIndexerIndexProjectionsParameters() 
+            { 
+                ProjectionMode = IndexProjectionMode.SkipIndexingParentDocuments 
+            }
+        };
+
         // TODO: Deploy skillsettet til ressursen i Azure
         SearchIndexerSkillset? indexerSkillset = await CreateOrUpdateSearchIndexerSkillset(
             skills: skills,
+            indexProjection: indexProjection,
             aiServicesApiKey: cognitiveServicesApiKey
         );
 
@@ -217,6 +237,7 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
      */
     private async Task<SearchIndexerSkillset?> CreateOrUpdateSearchIndexerSkillset(
         IList<SearchIndexerSkill> skills,
+        SearchIndexerIndexProjection indexProjection,
         string aiServicesApiKey)
     {
         var skillset = await GetSkillsetAsync(SkillsetName);
@@ -227,7 +248,8 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         {
             Name = SkillsetName,
             Description = "Samling av skills som brukes i prosesseringen",
-            CognitiveServicesAccount = new CognitiveServicesAccountKey(aiServicesApiKey)
+            CognitiveServicesAccount = new CognitiveServicesAccountKey(aiServicesApiKey),
+            IndexProjection = indexProjection
         };
 
         try
