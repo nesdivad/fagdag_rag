@@ -14,7 +14,6 @@ public interface IAzureSearchIndexService
 public class AzureSearchIndexService : IAzureSearchIndexService
 {
     private string IndexName { get; }
-    private string Username { get; }
     private SearchIndexClient SearchIndexClient { get; }
     public AzureSearchIndexService(IConfiguration configuration)
     {
@@ -26,8 +25,7 @@ public class AzureSearchIndexService : IAzureSearchIndexService
         ArgumentException.ThrowIfNullOrEmpty(azureSearchApiKey);
         ArgumentException.ThrowIfNullOrEmpty(azureSearchEndpoint);
         
-        Username = username;
-        IndexName = $"index_{Username}";
+        IndexName = $"index{username}";
         
         SearchIndexClient = new(
             endpoint: new Uri(azureSearchEndpoint), 
@@ -37,6 +35,7 @@ public class AzureSearchIndexService : IAzureSearchIndexService
 
     public async Task<SearchIndex> CreateOrUpdateSearchIndexAsync()
     {
+        // For å unngå oppretting av nye indekser gjøres det først en get
         try
         {
             var result = await SearchIndexClient.GetIndexAsync(IndexName);
@@ -44,25 +43,26 @@ public class AzureSearchIndexService : IAzureSearchIndexService
         }
         catch (RequestFailedException ex) when (ex.Status is 404) { }
 
+        // TODO: Definér skjemaet for indeksen
+        // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.fieldbuilder?view=azure-dotnet
+
         FieldBuilder builder = new();
-        SearchIndex searchIndex = new(IndexName)
-        {
-            Fields = builder.Build(typeof(Index))
-        };
-
-        try
-        {
-            await SearchIndexClient.CreateOrUpdateIndexAsync(
-                index: searchIndex,
-                allowIndexDowntime: true,
-                onlyIfUnchanged: true
-            );
-        }
-        catch (RequestFailedException)
-        {
-            Console.WriteLine("Hopper over oppdatering av indeks...");
-        }
-
+        IList<SearchField> fields = builder.Build(typeof(Index));
+        
+        // TODO: Lag en instans av søkeindeksen
+        // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.models.searchindex?view=azure-dotnet
+        SearchIndex searchIndex = new(IndexName, fields);
+        
+        // TODO: Opprett søkeindeksen
+        // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.searchindexclient.createorupdateindexasync?view=azure-dotnet
+        await SearchIndexClient.CreateOrUpdateIndexAsync(
+            index: searchIndex,
+            allowIndexDowntime: true
+        );
+        
         return searchIndex;
+
+        // TODO: Fjern når du er ferdig
+        // throw new NotImplementedException();
     }
 }

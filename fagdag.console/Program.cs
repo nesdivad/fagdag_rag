@@ -406,10 +406,41 @@ async Task<bool> TestStepOne()
     return successful;
 }
 
+async Task<bool> TestStepTwo()
+{
+    var successful = false;
+
+    await AnsiConsole.Status()
+        .Spinner(Spinner.Known.Default)
+        .StartAsync("Oppretter indeks...", async ctx => 
+        {
+            try
+            {
+                ArgumentNullException.ThrowIfNull(azureSearchIndexService);
+                var index = await azureSearchIndexService.CreateOrUpdateSearchIndexAsync();
+                Thread.Sleep(TimeSpan.FromMilliseconds(500));
+                AnsiConsole.MarkupLine($"[green]Test av indeks vellykket! Indeks med navn {index.Name} er opprettet.[/]:check_mark_button:");
+                successful = true;
+            }
+            catch (Exception)
+            {
+                AnsiConsole.MarkupLine($"[red]Noe gikk galt under oppretting av indeksen.\n[/]");
+            }
+        });
+
+    return successful;
+}
+
 async Task Test()
 {
     var stepZeroSuccess = TestStepZero();
+    if (!stepZeroSuccess) return;
+
     var stepOneSuccess = await TestStepOne();
+    if (!stepOneSuccess) return;
+    
+    var stepTwoSuccess = await TestStepTwo();
+    if (!stepTwoSuccess) return;
 }
 
 #endregion

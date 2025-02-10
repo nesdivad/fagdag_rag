@@ -113,7 +113,6 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         // TODO: Deploy skillsettet til ressursen i Azure
         SearchIndexerSkillset? indexerSkillset = await CreateOrUpdateSearchIndexerSkillset(
             skillsetName: Username,
-            indexerClient: SearchIndexerClient,
             skills: skills,
             aiServicesApiKey: cognitiveServicesApiKey
         );
@@ -193,15 +192,39 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         }
     }
 
+    private async Task<SearchIndexerSkillset?> GetSkillsetAsync(string skillsetName)
+    {
+        try
+        {
+            return await SearchIndexerClient.GetSkillsetAsync(skillsetName);
+        }
+        catch (RequestFailedException e) when (e.Status is 404)
+        {
+            return null;
+        }
+    }
+
+    private async Task DeleteSkillsetAsync(string skillsetName)
+    {
+        try
+        {
+            await SearchIndexerClient.DeleteSkillsetAsync(skillsetName);
+        }
+        catch (RequestFailedException e) when (e.Status is 404) {}
+    }
+
     /**
      * <summary>Opprett eller oppdater et skillset</summary>
      */
-    private static async Task<SearchIndexerSkillset?> CreateOrUpdateSearchIndexerSkillset(
+    private async Task<SearchIndexerSkillset?> CreateOrUpdateSearchIndexerSkillset(
         string skillsetName,
-        SearchIndexerClient indexerClient,
         IList<SearchIndexerSkill> skills,
         string aiServicesApiKey)
     {
+        var skillset = await GetSkillsetAsync(skillsetName);
+        if (skillset is not null)
+            await DeleteSkillsetAsync(skillsetName);
+
         SearchIndexerSkillset searchIndexerSkillset = new(DefaultSkillset, skills)
         {
             Name = skillsetName,
@@ -211,7 +234,7 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
 
         try
         {
-            await indexerClient.CreateSkillsetAsync(skillset: searchIndexerSkillset);
+            await SearchIndexerClient.CreateSkillsetAsync(skillset: searchIndexerSkillset);
         }
         catch (RequestFailedException e)
         {
