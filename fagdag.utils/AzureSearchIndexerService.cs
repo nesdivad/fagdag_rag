@@ -18,6 +18,7 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
 {
     // Bruk denne hvis ting går sideveis...
     private const string DefaultSkillset = "default";
+    private string SkillsetName { get; }
     private string IndexName { get; }
     private string IndexerName { get; }
     private string Username { get; }
@@ -49,8 +50,9 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         ArgumentException.ThrowIfNullOrEmpty(username);
 
         Username = username;
-        IndexName = $"index_{Username}";
-        IndexerName = $"indexer_{Username}";
+        IndexName = $"index{Username}";
+        IndexerName = $"indexer{Username}";
+        SkillsetName = $"skillset{Username}";
 
         SearchIndexerClient = new(new Uri(azureSearchEndpoint), new AzureKeyCredential(azureSearchApiKey));
         AzureOpenaiApiKey = new(azureOpenaiApiKey);
@@ -112,7 +114,6 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
 
         // TODO: Deploy skillsettet til ressursen i Azure
         SearchIndexerSkillset? indexerSkillset = await CreateOrUpdateSearchIndexerSkillset(
-            skillsetName: Username,
             skills: skills,
             aiServicesApiKey: cognitiveServicesApiKey
         );
@@ -138,7 +139,8 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         IndexingParameters indexingParameters = new()
         {
             MaxFailedItems = -1,
-            MaxFailedItemsPerBatch = -1
+            MaxFailedItemsPerBatch = -1,
+            IndexingParametersConfiguration = []
         };
 
         indexingParameters.IndexingParametersConfiguration.Add(
@@ -151,24 +153,21 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
             dataSourceName: DataSourceConnection.Name,
             targetIndexName: IndexName)
         {
-            Parameters = indexingParameters
+            Parameters = indexingParameters,
+            SkillsetName = SkillsetName 
         };
-
-        FieldMappingFunction fieldMappingFunction = new("base64Encode");
 
         indexer.FieldMappings.Add(new("content")
         {
             TargetFieldName = "content"
         });
 
-        try
+        indexer.OutputFieldMappings.Add(new("/document/pages/*/vector")
         {
-            await SearchIndexerClient.CreateOrUpdateIndexerAsync(indexer);
-        }
-        catch (RequestFailedException ex)
-        {
-            Console.WriteLine($"En feil oppsto under oppretting av indekserer.\n{ex.Message}");
-        }
+            TargetFieldName = "vector"
+        });
+
+        indexer = await SearchIndexerClient.CreateOrUpdateIndexerAsync(indexer);
 
         return indexer;
     }
@@ -217,17 +216,16 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
      * <summary>Opprett eller oppdater et skillset</summary>
      */
     private async Task<SearchIndexerSkillset?> CreateOrUpdateSearchIndexerSkillset(
-        string skillsetName,
         IList<SearchIndexerSkill> skills,
         string aiServicesApiKey)
     {
-        var skillset = await GetSkillsetAsync(skillsetName);
+        var skillset = await GetSkillsetAsync(SkillsetName);
         if (skillset is not null)
-            await DeleteSkillsetAsync(skillsetName);
+            await DeleteSkillsetAsync(SkillsetName);
 
         SearchIndexerSkillset searchIndexerSkillset = new(DefaultSkillset, skills)
         {
-            Name = skillsetName,
+            Name = SkillsetName,
             Description = "Samling av skills som brukes i prosesseringen",
             CognitiveServicesAccount = new CognitiveServicesAccountKey(aiServicesApiKey)
         };

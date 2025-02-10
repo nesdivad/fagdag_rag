@@ -39,7 +39,7 @@ public class AzureSearchIndexService : IAzureSearchIndexService
         try
         {
             var result = await SearchIndexClient.GetIndexAsync(IndexName);
-            return result;
+            await SearchIndexClient.DeleteIndexAsync(result.Value.Name);
         }
         catch (RequestFailedException ex) when (ex.Status is 404) { }
 

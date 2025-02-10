@@ -362,7 +362,7 @@ bool TestStepZero()
                 azureOpenAIService = CreateAzureOpenAIService(configuration, azureSearchIndexService);
                 azureSearchIndexerService = CreateAzureSearchIndexerService(configuration);
 
-                Thread.Sleep(TimeSpan.FromMilliseconds(500));
+                Sleep();
 
                 AnsiConsole.MarkupLine("[green]Test av konfigurasjon i appsettings.json[/] :check_mark_button:");
                 successful = true;
@@ -393,13 +393,13 @@ async Task<bool> TestStepOne()
             {
                 ArgumentNullException.ThrowIfNull(azureSearchIndexerService);
                 var skillset = await azureSearchIndexerService.CreateSkillsetAsync();
-                Thread.Sleep(TimeSpan.FromMilliseconds(500));
+                Sleep();
                 AnsiConsole.MarkupLine($"[green]Test av skillsets vellykket! Skillset med navn {skillset.Name} er opprettet.[/] :check_mark_button:");
                 successful = true;
             }
             catch (Exception)
             {
-                AnsiConsole.MarkupLine($"[red]Noe gikk galt under oppretting av skillsets.\n[/]");
+                AnsiConsole.MarkupLine($"[red]Noe gikk galt under oppretting av skillsets.[/]\n");
             }
         });
 
@@ -418,13 +418,38 @@ async Task<bool> TestStepTwo()
             {
                 ArgumentNullException.ThrowIfNull(azureSearchIndexService);
                 var index = await azureSearchIndexService.CreateOrUpdateSearchIndexAsync();
-                Thread.Sleep(TimeSpan.FromMilliseconds(500));
-                AnsiConsole.MarkupLine($"[green]Test av indeks vellykket! Indeks med navn {index.Name} er opprettet.[/]:check_mark_button:");
+                Sleep();
+                AnsiConsole.MarkupLineInterpolated($"[green]Test av indeks vellykket! Indeks med navn {index.Name} er opprettet.[/] :check_mark_button:");
                 successful = true;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                AnsiConsole.MarkupLine($"[red]Noe gikk galt under oppretting av indeksen.\n[/]");
+                AnsiConsole.MarkupLineInterpolated($"Noe gikk galt under oppretting av indeksen.\n{e.Message}");
+            }
+        });
+
+    return successful;
+}
+
+async Task<bool> TestStepThree()
+{
+    var successful = false;
+
+    await AnsiConsole.Status()
+        .Spinner(Spinner.Known.Default)
+        .StartAsync("Oppretter indekserer...", async ctx => 
+        {
+            try
+            {
+                ArgumentNullException.ThrowIfNull(azureSearchIndexerService);
+                var indexer = await azureSearchIndexerService.CreateOrUpdateIndexerAsync();
+                Sleep();
+                AnsiConsole.MarkupLineInterpolated($"[green]Test av indekserer vellykket! Indekserer med navn {indexer.Name} er opprettet.[/]\n :check_mark_button:");
+                successful = true;
+            }
+            catch (Exception e)
+            {
+                AnsiConsole.MarkupLineInterpolated($"Noe gikk galt under oppretting av indekserer.\n{e.Message} {e.StackTrace}");
             }
         });
 
@@ -441,6 +466,9 @@ async Task Test()
     
     var stepTwoSuccess = await TestStepTwo();
     if (!stepTwoSuccess) return;
+
+    var stepThreeSuccess = await TestStepThree();
+    if (!stepThreeSuccess) return;
 }
 
 #endregion
@@ -502,5 +530,7 @@ static string CreateOrRetrieveUsername()
         return user;
     }
 }
+
+void Sleep() => Thread.Sleep(TimeSpan.FromMilliseconds(500));
 
 #endregion
