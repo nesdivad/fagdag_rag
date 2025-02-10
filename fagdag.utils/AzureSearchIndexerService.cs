@@ -107,7 +107,7 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
 
         // TODO: Lag en liste med alle skills
         List<SearchIndexerSkill> skills = [
-            piiSkill,
+            // piiSkill,
             splitSkill,
             embeddingSkill
         ];
@@ -252,10 +252,10 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
             new("text") { Source = "/document/content" }
         ];
         List<OutputFieldMappingEntry> outputMappings = [
-            new("maskedText")
+            new("maskedText") { TargetName = "/document/maskedText"}
         ];
 
-        return new PiiDetectionSkill(inputMappings, outputMappings)
+        var pii = new PiiDetectionSkill(inputMappings, outputMappings)
         {
             Name = "PII detection",
             Description = "Detect personally identifiable information in the text, and mask it.",
@@ -269,6 +269,8 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
             // Måles opp mot konfidensnivå i resultat fra AI-modellen.
             MinPrecision = minimumPrecision
         };
+
+        return pii;
     }
 
     /**
@@ -280,7 +282,7 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
     {
         List<InputFieldMappingEntry> inputMappings = [
             // legg merke til at source er output fra forrige skill (pii detection)
-            new("text") { Source = "/document/maskedText" }
+            new("text") { Source = "/document/content" }
         ];
 
         List<OutputFieldMappingEntry> outputMappings = [
@@ -302,7 +304,6 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
 
             // Bestemmer om dokumentet skal splittes på sider eller i individuelle setninger.
             TextSplitMode = TextSplitMode.Pages,
-            Context = "/document",
             MaximumPagesToTake = 0
         };
 
@@ -335,7 +336,8 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
             DeploymentName = Constants.TextEmbedding3Large,
             Dimensions = 1536,
             ModelName = Constants.TextEmbedding3Large,
-            ResourceUri = endpoint
+            ResourceUri = endpoint,
+            Context ="/document/pages/*"
         };
     }
 }

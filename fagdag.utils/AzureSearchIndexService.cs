@@ -59,7 +59,7 @@ public class AzureSearchIndexService : IAzureSearchIndexService
             index: searchIndex,
             allowIndexDowntime: true
         );
-        
+
         return searchIndex;
 
         // TODO: Fjern når du er ferdig
