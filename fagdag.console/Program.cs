@@ -360,7 +360,7 @@ bool TestStepZero()
             try
             {
                 azureSearchIndexService = CreateAzureSearchIndexService(configuration);
-                azureOpenAIService = CreateAzureOpenAIService(configuration, azureSearchIndexService);
+                azureOpenAIService = CreateAzureOpenAIService(configuration);
                 azureSearchIndexerService = CreateAzureSearchIndexerService(configuration);
 
                 Sleep();
@@ -516,11 +516,9 @@ static void RenderUsername(string username)
 
 static void RenderSeparator() => AnsiConsole.Write(new Rule().HeavyBorder());
 
-static AzureOpenAIService CreateAzureOpenAIService(
-    IConfiguration configuration, 
-    IAzureSearchIndexService azureSearchIndexService)
+static AzureOpenAIService CreateAzureOpenAIService(IConfiguration configuration)
 {
-    return new(configuration, azureSearchIndexService);
+    return new(configuration);
 }
 
 static AzureSearchIndexService CreateAzureSearchIndexService(IConfiguration configuration)
