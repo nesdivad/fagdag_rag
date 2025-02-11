@@ -4,10 +4,6 @@
     <ProjectReference Include="..\fagdag.utils\fagdag.utils.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.SemanticKernel" Version="1.36.1" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
