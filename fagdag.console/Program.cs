@@ -22,6 +22,9 @@ AzureOpenAIService? azureOpenAIService = null;
 AzureSearchIndexService? azureSearchIndexService = null;
 AzureSearchIndexerService? azureSearchIndexerService = null;
 
+username = TangOgTare.GetOrCreateUsername();
+configuration[Constants.Username] = username;
+
 Start();
 
 void Start()
@@ -65,7 +68,8 @@ void DataFlow(IConfiguration configuration)
         "2. Opprett indeks",
         "3. Opprett indekserer",
         "4. Test hele løsningen!",
-        "5. Søk i indeksen"
+        "5. Søk i indeksen",
+        "6. Rykk tilbake til start"
     ];
 
     void Information()
@@ -112,7 +116,7 @@ void DataFlow(IConfiguration configuration)
         AnsiConsole.MarkupLine("Verdiene ligger i et [yellow]Keeper[/]-dokument, og deles med deg.");
     }
 
-    void Select()
+    bool Select()
     {
         AnsiConsole.Clear();
         RenderUsername(username);
@@ -141,12 +145,16 @@ void DataFlow(IConfiguration configuration)
             case 4:
                 Task.Run(SearchIndex).Wait();
                 break;
+            case 5:
+                return true;
             default:
                 AnsiConsole.Clear();
                 RenderUsername(username);
                 Select();
                 break;
         }
+
+        return false;
     }
 
     AnsiConsole.Clear();
@@ -155,11 +163,9 @@ void DataFlow(IConfiguration configuration)
     RenderSeparator();
     StepZero();
     PromptNext(prompt: "\nTrykk [teal]Enter[/] for å gå til neste steg.");
-    username = CreateOrRetrieveUsername();
-    configuration[Constants.Username] = username;
 
     bool @return = false;
-    do Select();
+    do @return = Select();
     while (!@return);
 }
 
@@ -234,6 +240,7 @@ void TextProcessing()
     PromptNext(prompt: "\nTrykk [teal]Enter[/] for å fullføre steget.");
 }
 
+// Oppsett av indeks
 static void Index()
 {
     void Information()
@@ -359,6 +366,10 @@ static void Indexer()
                 """
             )
         );
+
+        AnsiConsole.MarkupLine("[fuchsia]Implementasjon:[/]");
+        AnsiConsole.MarkupLine("Gå til [yellow]Fagdag.Utils.AzureSearchIndexerService[/] og implementer metoden [yellow]CreateOrUpdateIndexerAsync[/]");
+        AnsiConsole.Write(codePanel);
     }
 
     Information();
@@ -375,12 +386,13 @@ void TestIndex()
     PromptNext();
 }
 
+// Søk i indeksen du har laget
 async Task SearchIndex()
 {
     async IAsyncEnumerable<string> Search(string searchText)
     {
         var results = azureSearchIndexService.SearchAsync(
-            searchText: searchText, 
+            searchText: searchText,
             size: 5
         );
 
@@ -396,7 +408,7 @@ async Task SearchIndex()
 
     AnsiConsole.MarkupLine("[lime]Søk[/] i søkeindeksen du har bygget opp! Søket returnerer inntil 5 resultater.\n");
     string qa = AnsiConsole.Ask<string>("Skriv inn søkefrasen her:");
-    
+
     await foreach (var doc in Search(qa))
     {
         AnsiConsole.WriteLine(doc);
@@ -406,48 +418,145 @@ async Task SearchIndex()
     PromptNext();
 }
 
-// Første del er over, over til fase 2!
-static void Break()
-{
-    PromptNext();
-}
-
 #endregion
 
 #region [ RAG og generativ AI ]
 
-static void RAG()
+void RAG()
 {
+    bool Select()
+    {
+        string[] choices = [
+            "1. Sett opp prompt",
+            "2. Sett opp flyt for RAG",
+            "3. Test applikasjonen!",
+            "4. Rykk tilbake til start"
+        ];
 
-}
+        AnsiConsole.Clear();
+        RenderUsername(username);
 
-// Introduksjon til fase 2
-static void HelloAgain()
-{
+        var choice = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Vennligst velg ditt neste steg:")
+                .AddChoices(choices)
+        );
 
+        var index = Array.FindIndex(choices, x => x.Equals(choice, StringComparison.OrdinalIgnoreCase));
+        switch (index)
+        {
+            case 0:
+                Prompt();
+                break;
+            case 1:
+                RagFlow();
+                break;
+            case 2:
+                TestWebApp();
+                break;
+            case 3:
+                return true;
+            default: break;
+        }
+
+        return false;
+    }
+
+    AnsiConsole.Clear();
+
+    AnsiConsole.MarkupLine("Velkommen til del 2 av fagdagen, hvor du får utforske hvordan data fra søkeindeksen kan tas i bruk i en RAG-pipeline.");
+    AnsiConsole.MarkupLine("RAG-løsningen i dette prosjektet er forholdsvis enkel, men du får lære de viktigste trinnene for å ta i bruk ekstern data med en AI-modell.");
+    AnsiConsole.MarkupLine("Dersom du ikke ble ferdig med del 1, fortvil ikke; Spør Kristoffer om å bruke den ferdiglagde indeksen slik at du får best mulig utbytte av denne delen også!");
+
+    PromptNext();
+    RenderSeparator();
+
+    var appsettings = new JsonText(
+        """
+        {
+            "AZURE_OPENAI_API_KEY": "",
+            "AZURE_OPENAI_ENDPOINT": "",
+            "AZURE_SEARCH_API_KEY": "",
+            "AZURE_SEARCH_ENDPOINT": "",
+            "AZURE_COGNITIVESERVICES_API_KEY": "",
+            "AZURE_COGNITIVESERVICES_ENDPOINT": "",
+            "AZURE_STORAGE_CONNECTION_STRING": "",
+            "AZURE_OPENAI_EMBEDDING_ENDPOINT": "",
+            "Username": ""
+        }
+        """
+    );
+
+    AnsiConsole.MarkupLine("[fuchsia]Konfigurasjon:[/]");
+    AnsiConsole.MarkupLine("Finn filen [yellow]appsettings.json[/] i prosjektet [yellow]fagdag.web[/], og legg inn verdier for følgende variabler: ");
+    AnsiConsole.Write(
+        new Panel(appsettings)
+            .Header("appsettings.json")
+            .Collapse()
+            .RoundedBorder()
+            .BorderColor(Color.Yellow)
+    );
+    AnsiConsole.MarkupLine("Verdiene ligger i et [yellow]Keeper[/]-dokument, og deles med deg. Verdien [lime]Username[/] ligger i filen [yellow]user.txt[/] i roten av løsningen (sammen med .sln-filen).");
+
+    PromptNext();
+    RenderSeparator();
+
+    bool @return = false;
+    do @return = Select();
+    while (!@return);
 }
 
 // Prompt
 static void Prompt()
 {
+    void Information()
+    {
+        var tipPanel = new Panel(
+            new Text(
+                """
+                1. Start prompten med å definere formålet. Hva vil du at brukeren skal få hjelp til? Prøv å beskrive det så konkret som mulig.
+                2. Skriv prompten på det samme språket som du ønsker svaret på. Siden kontekst er på norsk, vil du kanskje få dårligere resultater dersom du blander inn engelsk.
+                3. Gi instruksjoner om at AI-modellen kun skal svare basert på konteksten du gir den. Det reduserer sjansen for hallusinasjoner, men øker sjansen for at modellen ikke kan svare hvis konteksten er av dårlig kvalitet.
+                4. Håndter tilfeller hvor AI-modellen ikke har kontekst til å svare på spørsmålet, f.eks. ved å fortelle den at den skal svare "Jeg vet ikke" eller "google it!".
+                5. Gi et (eller flere) eksempel på spørsmål og svar i prompten, slik at modellen lærer hvilke hvordan den skal svare på oppgaven.
+                """
+            )
+        );
 
+        AnsiConsole.MarkupLine("[fuchsia]Prompt:[/]");
+        AnsiConsole.MarkupLine("Alle gode RAG-løsninger trenger en god datakilde, men det er til ingen nytte dersom prompten ikke er satt opp riktig!");
+        AnsiConsole.MarkupLine("Det er ingen fasit på hva som utgjør en god eller dårlig prompt, det er forskjellig for hvert brukstilfelle. Her er noen tips som jeg liker å benytte:");
+        AnsiConsole.Write(tipPanel);
+    }
+
+    void Impl()
+    {
+        var codePanel = new Panel(
+            new Text("static string GetPrompt(string userMessage, string dataContext) { }")
+        );
+        
+        AnsiConsole.MarkupLine("[fuchsia]Implementasjon:[/]");
+        AnsiConsole.MarkupLine("Gå til [yellow]Fagdag.Web.Components.Chat.Chat.razor.cs[/] og rediger metoden [yellow]GetPrompt[/]. Metoden har to parametre; [lime]userMessage[/] - brukerens spørsmål, og [lime]dataContext[/] - konteksten du ønsker å gi til modellen.");
+        AnsiConsole.Write(codePanel);
+    }
+
+    Information();
+    PromptNext();
+    RenderSeparator();
+    Impl();
+    PromptNext(prompt: "\nTrykk [teal]Enter[/] for å gå til neste steg.");
 }
 
 // Sett opp flyt for RAG
 static void RagFlow()
 {
-
+    PromptNext();
 }
 
-// Koble sammen flyt for RAG og prompt, sende til AI Services
-static void ConnectStuff()
+// Test webapplikasjon
+static void TestWebApp()
 {
-
-}
-
-static void Goodbye()
-{
-
+    PromptNext();
 }
 
 #endregion
@@ -631,23 +740,6 @@ static AzureSearchIndexService CreateAzureSearchIndexService(IConfiguration conf
 
 static AzureSearchIndexerService CreateAzureSearchIndexerService(IConfiguration configuration)
     => new(configuration);
-
-static string CreateOrRetrieveUsername()
-{
-    var filename = "user.txt";
-    var existingUser = File.Exists(filename);
-    if (existingUser)
-    {
-        return File.ReadAllText(filename);
-    }
-    else
-    {
-        var rand = new Random();
-        var user = $"u{rand.Next(0, 1_000_000)}";
-        File.WriteAllText(filename, user);
-        return user;
-    }
-}
 
 void Sleep(long milliseconds = 500) => Thread.Sleep(TimeSpan.FromMilliseconds(milliseconds));
 

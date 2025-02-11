@@ -34,14 +34,32 @@ public partial class Chat
         }
     }
 
+    static string GetPrompt(string userMessage, string dataContext)
+    {
+        return 
+        $"""
+            Du er en chatbot som svarer på spørsmål fra ansatte i konsulentselskapet Bouvet.
+            
+            Bruk dokumentene under til å svare på spørsmålene:
+            <documents>
+            {dataContext}
+            </documents>
+
+            Her er brukerens spørsmål:
+            
+            {userMessage}
+        """;
+    }
+
+
     async void SendMessage()
     {
         if (ChatHandler is null || SearchHandler is null) return;
 
         OpenAI.Chat.ChatMessage[] chatMessages = [
             .. messages.Select<Message, OpenAI.Chat.ChatMessage>(
-                x => x.IsAssistant 
-                    ? new AssistantChatMessage(x.Content) 
+                x => x.IsAssistant
+                    ? new AssistantChatMessage(x.Content)
                     : new UserChatMessage(x.Content))
         ];
 
@@ -76,10 +94,10 @@ public partial class Chat
                 input: userMessage.Content,
                 options: new() { Dimensions = 1536 }
             );
-            
+
             // TODO: Søk etter dokumenter ved å bruke SearchHandler
             IAsyncEnumerable<SearchResult<Utils.Index>> searchResults = SearchHandler.SearchAsync(embeddings);
-            
+
             // TODO: Hent ut relevant info fra dokumentene, og legg dem inn i prompten som en streng.
             StringBuilder sb = new();
             await foreach (var searchResult in searchResults)
@@ -92,18 +110,10 @@ public partial class Chat
             // https://medium.com/@ajayverma23/the-art-and-science-of-rag-mastering-prompt-templates-and-contextual-understanding-a47961a57e27
             // https://docs.llamaindex.ai/en/v0.10.22/examples/prompts/prompts_rag/
 
-            var prompt = $"""
-                Du er en chatbot som svarer på spørsmål fra ansatte i konsulentselskapet Bouvet.
-                
-                Bruk dokumentene under til å svare på spørsmålene:
-                <documents>
-                {sb}
-                </documents>
-
-                Her er brukerens spørsmål:
-                
-                {userMessage.Content}
-            """;
+            var prompt = GetPrompt(
+                userMessage: userMessage.Content, 
+                dataContext: sb.ToString()
+            );
 
             // Console.WriteLine(prompt);
 
@@ -112,7 +122,7 @@ public partial class Chat
 
             // TODO: Send til AI-modell ved å bruke 'ChatHandler'
             // Det er også mulig å strømme resultatet token for token.
-            
+
             /* "Vanlig" fremgangsmåte, venter til hele teksten er ferdig generert
             var completion = await ChatHandler.GetCompletionsAsync(
                 chatMessages
