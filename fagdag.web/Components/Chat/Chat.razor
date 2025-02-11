@@ -4,13 +4,13 @@
 @using Fagdag.Web.Model
 @attribute [StreamRendering(true)]
 
-<PageTitle>Chat</PageTitle>
+<PageTitle>BouChat</PageTitle>
 
 <div class="chat">
     <div class="messages-scroller">
         <div class="messages">
             <ChatMessage
-                State="@(new Message(){IsAssistant = true, Content = "Hi, I'm a helpful assistant, how may I assist you?"})" />
+                State="@(new Message(){IsAssistant = true, Content = "Hei, jeg er en hjelpsom assistent som svarer på spørsmål fra ansatte i Bouvet. Akkurat nå svarer jeg på spørsmål om artikler fra sidene 'meg som ansatt' og personalhåndboken."})" />
             @for (var i = 0; i < messages.Count; i++)
             {
                 var id = $"message{i}";
@@ -21,7 +21,7 @@
     </div>
 
     <form class="write-message" @ref="@writeMessageElement" @onsubmit="@SendMessage">
-        <textarea @bind="@userMessageText" Placeholder="Ask the AI assistant" style="width: 100%; height: 100%;" />
+        <textarea @bind="@userMessageText" Placeholder="Spør Bouvet-botten" style="width: 100%; height: 100%;" />
         <button type="submit">Send</button>
     </form>
 </div>

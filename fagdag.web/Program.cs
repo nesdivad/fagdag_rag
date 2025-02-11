@@ -10,6 +10,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddScoped<IAzureOpenAIService, AzureOpenAIService>();
+builder.Services.AddScoped<IAzureSearchIndexService, AzureSearchIndexService>();
 
 var app = builder.Build();
 var configuration = app.Configuration;

@@ -1,8 +1,10 @@
 using System.ClientModel;
 
 using Azure;
+using Azure.Search.Documents;
 using Azure.Search.Documents.Indexes;
 using Azure.Search.Documents.Indexes.Models;
+using Azure.Search.Documents.Models;
 
 using Microsoft.Extensions.Configuration;
 
@@ -11,6 +13,7 @@ namespace Fagdag.Utils;
 public interface IAzureSearchIndexService
 {
     Task<SearchIndex> CreateOrUpdateSearchIndexAsync();
+    IAsyncEnumerable<SearchResult<Index>> SearchAsync(ReadOnlyMemory<float> embedding);
 }
 
 public class AzureSearchIndexService : IAzureSearchIndexService
@@ -124,5 +127,28 @@ public class AzureSearchIndexService : IAzureSearchIndexService
 
         // TODO: Fjern når du er ferdig
         // throw new NotImplementedException();
+    }
+
+    public async IAsyncEnumerable<SearchResult<Index>> SearchAsync(ReadOnlyMemory<float> embedding)
+    {
+        var options = new SearchOptions
+        {
+            VectorSearch = new()
+            {
+                Queries =
+                {
+                    new VectorizedQuery(embedding) { Fields = { "vector" }, KNearestNeighborsCount = 3 }
+                }
+            }
+        };
+
+        var documents = await SearchIndexClient.GetSearchClient(indexName: IndexName).SearchAsync<Index>(
+            options: options
+        );
+
+        await foreach (var doc in documents.Value.GetResultsAsync())
+        {
+            yield return doc;
+        }
     }
 }

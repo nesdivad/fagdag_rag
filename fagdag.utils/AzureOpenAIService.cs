@@ -16,7 +16,7 @@ public interface IAzureOpenAIService
         ChatMessage[] chatMessages, 
         ChatCompletionOptions? options = null
     );
-    IAsyncEnumerable<StreamingChatCompletionUpdate> GetCompletionsStreamingAsync(
+    AsyncCollectionResult<StreamingChatCompletionUpdate> GetCompletionsStreamingAsync(
         ChatMessage[] chatMessages, 
         ChatCompletionOptions? options = null
     );
@@ -26,11 +26,8 @@ public class AzureOpenAIService : IAzureOpenAIService
 {
     private ChatClient ChatClient { get; }
     private EmbeddingClient? EmbeddingClient { get; }
-    private IAzureSearchIndexService SearchIndexService { get; }
 
-    public AzureOpenAIService(
-        IConfiguration configuration, 
-        IAzureSearchIndexService azureSearchIndexService)
+    public AzureOpenAIService(IConfiguration configuration)
     {
         var azureOpenaiEndpoint = configuration[Constants.AzureOpenAIEndpoint];
         var azureOpenaiApiKey = configuration[Constants.AzureOpenAIApiKey];
@@ -43,29 +40,6 @@ public class AzureOpenAIService : IAzureOpenAIService
 
         EmbeddingClient = client.GetEmbeddingClient(Constants.TextEmbedding3Large);
         ChatClient = client.GetChatClient(Constants.Gpt4o);
-
-        SearchIndexService = azureSearchIndexService;
-    }
-
-    public async Task GetRagCompletionsAsync(
-        ChatMessage chatMessage, 
-        ChatCompletionOptions? options = null)
-    {
-        // TODO: Hent embeddings for chatMessage
-        // Dimensions må settes til 1536, da det er denne størrelsen som brukes i Embedding skill
-        var embeddings = await GetEmbeddingsAsync(
-            input: chatMessage.Content[0].Text, 
-            options: new() { Dimensions = 1536 }
-        );
-        
-        // TODO: Søk etter dokumenter
-        
-        // TODO: Hent ut relevant info fra dokumentene, og mat dem inn i prompten.
-
-        // TODO: GetCompletionsAsync(...)
-
-        // TODO: Fjern denne når du er ferdig
-        throw new NotImplementedException();
     }
 
     public async Task<ReadOnlyMemory<float>> GetEmbeddingsAsync(
@@ -97,7 +71,7 @@ public class AzureOpenAIService : IAzureOpenAIService
         return await ChatClient.CompleteChatAsync(chatMessages, options);
     }
 
-    public async IAsyncEnumerable<StreamingChatCompletionUpdate> GetCompletionsStreamingAsync(
+    public AsyncCollectionResult<StreamingChatCompletionUpdate> GetCompletionsStreamingAsync(
         ChatMessage[] chatMessages, 
         ChatCompletionOptions? options = null)
     {
@@ -109,9 +83,6 @@ public class AzureOpenAIService : IAzureOpenAIService
             Temperature = 0.4f
         };
 
-        await foreach (var update in ChatClient.CompleteChatStreamingAsync(chatMessages, options))
-        {
-            yield return update;
-        }
+        return ChatClient.CompleteChatStreamingAsync(chatMessages, options);
     }
 }
