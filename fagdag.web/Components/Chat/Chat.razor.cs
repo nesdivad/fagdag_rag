@@ -115,15 +115,13 @@ public partial class Chat
                 dataContext: sb.ToString()
             );
 
-            // Console.WriteLine(prompt);
-
             // Legg til en ny UserChatMessage i listen 'chatMessages' med prompten du laget
             chatMessages = [.. chatMessages, new UserChatMessage(prompt)];
 
             // TODO: Send til AI-modell ved å bruke 'ChatHandler'
-            // Det er også mulig å strømme resultatet token for token.
+            // Det er også mulig å strømme resultatet token for token, som gir en bedre brukeropplevelse.
 
-            /* "Vanlig" fremgangsmåte, venter til hele teksten er ferdig generert
+            /*
             var completion = await ChatHandler.GetCompletionsAsync(
                 chatMessages
             );
@@ -139,6 +137,7 @@ public partial class Chat
                 chatMessages
             );
 
+            // TODO: Append generert svar til assistantMessage.Content, og kall StateHasChanged.
             await foreach (var part in completionStreaming)
             {
                 string update = new([.. part.ContentUpdate.SelectMany(x => x.Text)]);
@@ -146,8 +145,6 @@ public partial class Chat
                 assistantMessage.Content += update;
                 StateHasChanged();
             }
-
-            // UI
         }
     }
 }

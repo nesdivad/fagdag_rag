@@ -34,5 +34,6 @@ public static class TangOgTare
             return user;
         }
     }
-    
 }
+
+public delegate void AnsiMarkup(string markup);

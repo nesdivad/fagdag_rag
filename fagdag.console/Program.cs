@@ -22,8 +22,11 @@ AzureOpenAIService? azureOpenAIService = null;
 AzureSearchIndexService? azureSearchIndexService = null;
 AzureSearchIndexerService? azureSearchIndexerService = null;
 
+
 username = TangOgTare.GetOrCreateUsername();
 configuration[Constants.Username] = username;
+
+AnsiMarkup m = AnsiConsole.MarkupLine;
 
 Start();
 
@@ -31,13 +34,13 @@ void Start()
 {
     string[] choices = [
         "1. Sett opp dataflyt og søkeindeks",
-        "2. Sett opp RAG og prompts for generativ AI"
+        "2. Sett opp prompt og RAG-flyt for generativ AI"
     ];
 
     while (true)
     {
         AnsiConsole.Clear();
-        AnsiConsole.MarkupLine("Velkommen til fagdag om [green]RAG![/]\n");
+        m("Velkommen til fagdag om [green]RAG![/]\n");
         var choice = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
                 .Title("Vennligst velg ditt neste steg:")
@@ -74,16 +77,16 @@ void DataFlow(IConfiguration configuration)
 
     void Information()
     {
-        AnsiConsole.MarkupLine("Velkommen til første del av fagdagen om generativ AI med [green]RAG![/]");
-        AnsiConsole.MarkupLine("I denne delen skal vi fokusere på å indeksere datakilden slik at den kan gjøres søkbar for løsningen vi skal bygge.");
+        m("Velkommen til første del av fagdagen om generativ AI med [green]RAG![/]");
+        m("I denne delen skal vi fokusere på å indeksere datakilden slik at den kan gjøres søkbar for løsningen vi skal bygge.");
 
-        AnsiConsole.MarkupLine("\n[fuchsia]Datakilde:[/]");
-        AnsiConsole.MarkupLine("Datakilden vår består av tekstlig datadumper fra Bouvets personalhåndbok og diverse informasjon som ligger under området 'Meg som ansatt'.");
-        AnsiConsole.MarkupLine("Målet er at du skal sitte igjen med en løsning som kan brukes til å spørre om alt du måtte lure på som ansatt i Bouvet. Eksempler på spørsmål kan være hvilke [green]goder[/] du kan benytte deg av, hva du må gjøre dersom du blir [red]sykemeldt[/] m.m.");
+        m("\n[fuchsia]Datakilde:[/]");
+        m("Datakilden vår består av tekstlig datadumper fra Bouvets personalhåndbok og diverse informasjon som ligger under området 'Meg som ansatt'.");
+        m("Målet er at du skal sitte igjen med en løsning som kan brukes til å spørre om alt du måtte lure på som ansatt i Bouvet. Eksempler på spørsmål kan være hvilke [green]goder[/] du kan benytte deg av, hva du må gjøre dersom du blir [red]sykemeldt[/] m.m.");
 
-        AnsiConsole.MarkupLine("\n[fuchsia]Teknologi:[/]");
-        AnsiConsole.MarkupLine("I denne løsningen benytter vi AI-modeller fra OpenAI, som kjøres i Azure. Modellene benyttes til flere ting, som å svare på spørsmål eller lage [aqua]embeddings[/] (vi kommer tilbake til dette) av datakildene.");
-        AnsiConsole.MarkupLine("I tillegg benytter vi tjenesten [aqua]Azure AI Search[/], som er en komplett tjeneste for både indeksering og søking i data.");
+        m("\n[fuchsia]Teknologi:[/]");
+        m("I denne løsningen benytter vi AI-modeller fra OpenAI, som kjøres i Azure. Modellene benyttes til flere ting, som å svare på spørsmål eller lage [aqua]embeddings[/] (vi kommer tilbake til dette) av datakildene.");
+        m("I tillegg benytter vi tjenesten [aqua]Azure AI Search[/], som er en komplett tjeneste for både indeksering og søking i data.");
 
     }
 
@@ -104,8 +107,8 @@ void DataFlow(IConfiguration configuration)
             """
         );
 
-        AnsiConsole.MarkupLine("[fuchsia]Konfigurasjon:[/]");
-        AnsiConsole.MarkupLine("Finn filen [yellow]appsettings.json[/] i prosjektet [yellow]fagdag.console[/], og legg inn verdier for følgende variabler: ");
+        m("[fuchsia]Konfigurasjon:[/]");
+        m("Finn filen [yellow]appsettings.json[/] i prosjektet [yellow]fagdag.console[/], og legg inn verdier for følgende variabler: ");
         AnsiConsole.Write(
             new Panel(appsettings)
                 .Header("appsettings.json")
@@ -113,7 +116,7 @@ void DataFlow(IConfiguration configuration)
                 .RoundedBorder()
                 .BorderColor(Color.Yellow)
         );
-        AnsiConsole.MarkupLine("Verdiene ligger i et [yellow]Keeper[/]-dokument, og deles med deg.");
+        m("Verdiene ligger i et [yellow]Keeper[/]-dokument, og deles med deg.");
     }
 
     bool Select()
@@ -175,34 +178,34 @@ void TextProcessing()
 {
     void Information()
     {
-        AnsiConsole.MarkupLine("[fuchsia]Tekstprosessering:[/]");
-        AnsiConsole.MarkupLine("I denne delen skal du lære å sette opp en pipeline for prosessering av tekst, fra rå data i markdown-format til søkbare indekserte dokumenter.");
-        AnsiConsole.MarkupLine("Den tekniske termen for en pipeline i [aqua]Azure AI Search[/] er et [aqua]skillset[/]. Et [aqua]skillset[/] består av ett eller flere [lime]skills[/].");
-        AnsiConsole.MarkupLine("Et [lime]skill[/] består av funksjonalitet som beriker søkedokumentet med informasjon. Dette kan være funksjonalitet som oversetter tekst, fjerner sensitiv informasjon, splitter dokumenter opp i mindre biter m.m.");
-        AnsiConsole.MarkupLine("Det er mulig å lage egne skills, men i denne løsningen skal vi bare bruke skills fra Microsoft sitt bibliotek.");
-        AnsiConsole.MarkupLine("Mer dokumentasjon om skillsets finnes her: [link]https://learn.microsoft.com/en-us/azure/search/cognitive-search-working-with-skillsets[/]");
+        m("[fuchsia]Tekstprosessering:[/]");
+        m("I denne delen skal du lære å sette opp en pipeline for prosessering av tekst, fra rå data i markdown-format til søkbare indekserte dokumenter.");
+        m("Den tekniske termen for en pipeline i [aqua]Azure AI Search[/] er et [aqua]skillset[/]. Et [aqua]skillset[/] består av ett eller flere [lime]skills[/].");
+        m("Et [lime]skill[/] består av funksjonalitet som beriker søkedokumentet med informasjon. Dette kan være funksjonalitet som oversetter tekst, fjerner sensitiv informasjon, splitter dokumenter opp i mindre biter m.m.");
+        m("Det er mulig å lage egne skills, men i denne løsningen skal vi bare bruke skills fra Microsoft sitt bibliotek.");
+        m("Mer dokumentasjon om skillsets finnes her: [link]https://learn.microsoft.com/en-us/azure/search/cognitive-search-working-with-skillsets[/]");
     }
 
     void Skills()
     {
-        AnsiConsole.MarkupLine("[fuchsia]Skillsets:[/]");
-        AnsiConsole.MarkupLine("I dette steget skal skillsettet implementeres. For å holde det relativt enkelt er det valgt ut 3 skills som skal benyttes i settet, og hele flyten kan da se slik ut:");
-        AnsiConsole.MarkupLine("\n[red]Rå data[/] | [lime]PII Detection[/] | [lime]Split skill[/] | [lime]Embedding skill[/] | [blue]Søkeklart dokument![/]\n");
-        AnsiConsole.MarkupLine("[lime underline]PII Detection[/]: Finner tekst som inneholder personlig identifiserbar informasjon og maskerer den.");
-        AnsiConsole.MarkupLine("[lime underline]Split skill[/]: Splitter dokumenter opp i mindre deler.");
-        AnsiConsole.MarkupLine("[lime underline]Embedding skill[/]: Lager embeddings av teksten i dokumentet.\n");
+        m("[fuchsia]Skillsets:[/]");
+        m("I dette steget skal skillsettet implementeres. For å holde det relativt enkelt er det valgt ut 3 skills som skal benyttes i settet, og hele flyten kan da se slik ut:");
+        m("\n[red]Rå data[/] | [lime]PII Detection[/] | [lime]Split skill[/] | [lime]Embedding skill[/] | [blue]Søkeklart dokument![/]\n");
+        m("[lime underline]PII Detection[/]: Finner tekst som inneholder personlig identifiserbar informasjon og maskerer den.");
+        m("[lime underline]Split skill[/]: Splitter dokumenter opp i mindre deler.");
+        m("[lime underline]Embedding skill[/]: Lager embeddings av teksten i dokumentet.\n");
 
-        AnsiConsole.MarkupLine("[link blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-pii-detection[/]");
-        AnsiConsole.MarkupLine("[link blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-textsplit[/]");
-        AnsiConsole.MarkupLine("[link blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-azure-openai-embedding[/]");
+        m("[link blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-pii-detection[/]");
+        m("[link blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-textsplit[/]");
+        m("[link blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-azure-openai-embedding[/]");
     }
 
     void Impl()
     {
-        AnsiConsole.MarkupLine("[fuchsia]Implementasjon:[/]");
-        AnsiConsole.MarkupLine("Gå til [yellow]Fagdag.Utils.AzureSearchIndexerService.cs[/] og implementér metoden [teal]CreateSkillsetAsync[/].");
-        AnsiConsole.MarkupLine("Start med å opprette de individuelle skillsene, før du setter dem sammen i et skillset. Til slutt skal skillsettet deployes ved å bruke metoden [teal]CreateOrUpdateSearchIndexerSkillset[/].");
-        AnsiConsole.MarkupLine("\n[lime]PS:[/] Det er laget implementasjoner for individuelle skills nederst i [yellow]Fagdag.Utils.AzureSearchIndexerService.cs[/]");
+        m("[fuchsia]Implementasjon:[/]");
+        m("Gå til [yellow]Fagdag.Utils.AzureSearchIndexerService.cs[/] og implementér metoden [teal]CreateSkillsetAsync[/].");
+        m("Start med å opprette de individuelle skillsene, før du setter dem sammen i et skillset. Til slutt skal skillsettet deployes ved å bruke metoden [teal]CreateOrUpdateSearchIndexerSkillset[/].");
+        m("\n[lime]PS:[/] Det er laget implementasjoner for individuelle skills nederst i [yellow]Fagdag.Utils.AzureSearchIndexerService.cs[/]");
 
         var codePanel = new Panel(new Text(
             """
@@ -241,23 +244,23 @@ void TextProcessing()
 }
 
 // Oppsett av indeks
-static void Index()
+void Index()
 {
     void Information()
     {
-        AnsiConsole.MarkupLine("[fuchsia]Indeks:[/]");
-        AnsiConsole.MarkupLine("Nå skal du sette opp en indeks i [blue]Azure AI Search[/]. En indeks består av søkbart innhold, og brukes som datakilde når du senere skal sette opp RAG-flyten for chatgrensesnittet.");
-        AnsiConsole.MarkupLine("En indeks inneholder [lime]dokumenter[/]. Hvert dokument er en søkbar 'enhet' i indeksen, og kan dermed deles opp forskjellig, avhengig av din applikasjon.");
-        AnsiConsole.MarkupLine("Hver indeks er definert av et JSON-skjema, som inneholder informasjon om felter i dokumentet og annen metadata.");
+        m("[fuchsia]Indeks:[/]");
+        m("Nå skal du sette opp en indeks i [blue]Azure AI Search[/]. En indeks består av søkbart innhold, og brukes som datakilde når du senere skal sette opp RAG-flyten for chatgrensesnittet.");
+        m("En indeks inneholder [lime]dokumenter[/]. Hvert dokument er en søkbar 'enhet' i indeksen, og kan dermed deles opp forskjellig, avhengig av din applikasjon.");
+        m("Hver indeks er definert av et JSON-skjema, som inneholder informasjon om felter i dokumentet og annen metadata.");
 
-        AnsiConsole.MarkupLine("\n [link blue]https://learn.microsoft.com/en-us/azure/search/search-what-is-an-index[/]");
+        m("\n [link blue]https://learn.microsoft.com/en-us/azure/search/search-what-is-an-index[/]");
     }
 
     void Index()
     {
         // Informasjon om indeks-skjema
-        AnsiConsole.MarkupLine("[fuchsia]Indeks-skjema:[/]");
-        AnsiConsole.MarkupLine("Definisjonen av et dokument i indeksen er laget med klassen [yellow]Fagdag.Utils.Index[/]:\n");
+        m("[fuchsia]Indeks-skjema:[/]");
+        m("Definisjonen av et dokument i indeksen er laget med klassen [yellow]Fagdag.Utils.Index[/]:\n");
         Panel panel = new(new JsonText(
             """
             {
@@ -272,7 +275,7 @@ static void Index()
             Header = new PanelHeader("Dokument")
         };
         AnsiConsole.Write(panel);
-        AnsiConsole.MarkupLine("[link blue]https://learn.microsoft.com/en-us/azure/search/tutorial-rag-build-solution-index-schema[/]\n");
+        m("[link blue]https://learn.microsoft.com/en-us/azure/search/tutorial-rag-build-solution-index-schema[/]\n");
     }
 
     void Impl()
@@ -301,10 +304,10 @@ static void Index()
             """
         ));
 
-        AnsiConsole.MarkupLine("[fuchsia]Implementasjon:[/]");
-        AnsiConsole.MarkupLine("Gå til [yellow]Fagdag.Utils.AzureSearchIndexService[/] og implementér metoden [yellow]CreateOrUpdateSearchIndexAsync()[/]");
-        AnsiConsole.MarkupLine("Vær obs på at det ligger noe kode her fra før, det er kun TODOs som skal implementeres.");
-        AnsiConsole.MarkupLine("Start med å lage en liste av typen 'SearchField' fra indeks-skjema som er definert. Opprett deretter en ny instans av 'SearchIndex', før du til slutt oppretter den i [aqua]Azure AI Search[/] og returnerer 'SearchIndex'-instansen.");
+        m("[fuchsia]Implementasjon:[/]");
+        m("Gå til [yellow]Fagdag.Utils.AzureSearchIndexService[/] og implementér metoden [yellow]CreateOrUpdateSearchIndexAsync()[/]");
+        m("Vær obs på at det ligger noe kode her fra før, det er kun TODOs som skal implementeres.");
+        m("Start med å lage en liste av typen 'SearchField' fra indeks-skjema som er definert. Opprett deretter en ny instans av 'SearchIndex', før du til slutt oppretter den i [aqua]Azure AI Search[/] og returnerer 'SearchIndex'-instansen.");
 
         AnsiConsole.Write(codePanel);
     }
@@ -320,16 +323,16 @@ static void Index()
 }
 
 // Oppsett av indekserer
-static void Indexer()
+void Indexer()
 {
     void Information()
     {
-        AnsiConsole.MarkupLine("[fuchsia]Indekserer:[/]");
-        AnsiConsole.MarkupLine("I dette steget skal vi konfigurere [aqua]AI Search Indexer[/]. Jobben til indekseren er å populere søkeindeksen med data.");
-        AnsiConsole.MarkupLine("Den henter først inn datasettet vårt fra en datakilde (som allerede er konfigurert), og så kjører den skillsettet på disse dataene.");
-        AnsiConsole.MarkupLine("Når skillsets er kjørt på datasettet, utføres projeksjoner fra output-felter på hvert skill til de korrekte feltene i indeksen, som ble definert i [yellow]Fagdag.Utils.Index[/].");
+        m("[fuchsia]Indekserer:[/]");
+        m("I dette steget skal vi konfigurere [aqua]AI Search Indexer[/]. Jobben til indekseren er å populere søkeindeksen med data.");
+        m("Den henter først inn datasettet vårt fra en datakilde (som allerede er konfigurert), og så kjører den skillsettet på disse dataene.");
+        m("Når skillsets er kjørt på datasettet, utføres projeksjoner fra output-felter på hvert skill til de korrekte feltene i indeksen, som ble definert i [yellow]Fagdag.Utils.Index[/].");
 
-        AnsiConsole.MarkupLine("\n[link blue]https://learn.microsoft.com/en-us/azure/search/search-indexer-overview[/]");
+        m("\n[link blue]https://learn.microsoft.com/en-us/azure/search/search-indexer-overview[/]");
     }
 
     void Impl()
@@ -367,8 +370,8 @@ static void Indexer()
             )
         );
 
-        AnsiConsole.MarkupLine("[fuchsia]Implementasjon:[/]");
-        AnsiConsole.MarkupLine("Gå til [yellow]Fagdag.Utils.AzureSearchIndexerService[/] og implementer metoden [yellow]CreateOrUpdateIndexerAsync[/]");
+        m("[fuchsia]Implementasjon:[/]");
+        m("Gå til [yellow]Fagdag.Utils.AzureSearchIndexerService[/] og implementer metoden [yellow]CreateOrUpdateIndexerAsync[/]");
         AnsiConsole.Write(codePanel);
     }
 
@@ -406,7 +409,7 @@ async Task SearchIndex()
 
     azureSearchIndexService ??= CreateAzureSearchIndexService(configuration);
 
-    AnsiConsole.MarkupLine("[lime]Søk[/] i søkeindeksen du har bygget opp! Søket returnerer inntil 5 resultater.\n");
+    m("[lime]Søk[/] i søkeindeksen du har bygget opp! Søket returnerer inntil 5 resultater.\n");
     string qa = AnsiConsole.Ask<string>("Skriv inn søkefrasen her:");
 
     await foreach (var doc in Search(qa))
@@ -464,9 +467,9 @@ void RAG()
 
     AnsiConsole.Clear();
 
-    AnsiConsole.MarkupLine("Velkommen til del 2 av fagdagen, hvor du får utforske hvordan data fra søkeindeksen kan tas i bruk i en RAG-pipeline.");
-    AnsiConsole.MarkupLine("RAG-løsningen i dette prosjektet er forholdsvis enkel, men du får lære de viktigste trinnene for å ta i bruk ekstern data med en AI-modell.");
-    AnsiConsole.MarkupLine("Dersom du ikke ble ferdig med del 1, fortvil ikke; Spør Kristoffer om å bruke den ferdiglagde indeksen slik at du får best mulig utbytte av denne delen også!");
+    m("Velkommen til del 2 av fagdagen, hvor du får utforske hvordan data fra søkeindeksen kan tas i bruk i en RAG-pipeline.");
+    m("RAG-løsningen i dette prosjektet er forholdsvis enkel, men du får lære de viktigste trinnene for å ta i bruk ekstern data med en AI-modell.");
+    m("Dersom du ikke ble ferdig med del 1, fortvil ikke; Spør Kristoffer om å bruke den ferdiglagde indeksen slik at du får best mulig utbytte av denne delen også!");
 
     PromptNext();
     RenderSeparator();
@@ -487,8 +490,8 @@ void RAG()
         """
     );
 
-    AnsiConsole.MarkupLine("[fuchsia]Konfigurasjon:[/]");
-    AnsiConsole.MarkupLine("Finn filen [yellow]appsettings.json[/] i prosjektet [yellow]fagdag.web[/], og legg inn verdier for følgende variabler: ");
+    m("[fuchsia]Konfigurasjon:[/]");
+    m("Finn filen [yellow]appsettings.json[/] i prosjektet [yellow]fagdag.web[/], og legg inn verdier for følgende variabler: ");
     AnsiConsole.Write(
         new Panel(appsettings)
             .Header("appsettings.json")
@@ -496,7 +499,7 @@ void RAG()
             .RoundedBorder()
             .BorderColor(Color.Yellow)
     );
-    AnsiConsole.MarkupLine("Verdiene ligger i et [yellow]Keeper[/]-dokument, og deles med deg. Verdien [lime]Username[/] ligger i filen [yellow]user.txt[/] i roten av løsningen (sammen med .sln-filen).");
+    m("Verdiene ligger i et [yellow]Keeper[/]-dokument, og deles med deg. Verdien [lime]Username[/] ligger i filen [yellow]user.txt[/] i roten av løsningen (sammen med .sln-filen).");
 
     PromptNext();
     RenderSeparator();
@@ -507,7 +510,7 @@ void RAG()
 }
 
 // Prompt
-static void Prompt()
+void Prompt()
 {
     void Information()
     {
@@ -523,9 +526,9 @@ static void Prompt()
             )
         );
 
-        AnsiConsole.MarkupLine("[fuchsia]Prompt:[/]");
-        AnsiConsole.MarkupLine("Alle gode RAG-løsninger trenger en god datakilde, men det er til ingen nytte dersom prompten ikke er satt opp riktig!");
-        AnsiConsole.MarkupLine("Det er ingen fasit på hva som utgjør en god eller dårlig prompt, det er forskjellig for hvert brukstilfelle. Her er noen tips som jeg liker å benytte:");
+        m("[fuchsia]Prompt:[/]");
+        m("Alle gode RAG-løsninger trenger en god datakilde, men det er til ingen nytte dersom prompten ikke er satt opp riktig!");
+        m("Det er ingen fasit på hva som utgjør en god eller dårlig prompt, det er forskjellig for hvert brukstilfelle. Her er noen tips som jeg liker å benytte:");
         AnsiConsole.Write(tipPanel);
     }
 
@@ -535,8 +538,8 @@ static void Prompt()
             new Text("static string GetPrompt(string userMessage, string dataContext) { }")
         );
         
-        AnsiConsole.MarkupLine("[fuchsia]Implementasjon:[/]");
-        AnsiConsole.MarkupLine("Gå til [yellow]Fagdag.Web.Components.Chat.Chat.razor.cs[/] og rediger metoden [yellow]GetPrompt[/]. Metoden har to parametre; [lime]userMessage[/] - brukerens spørsmål, og [lime]dataContext[/] - konteksten du ønsker å gi til modellen.");
+        m("[fuchsia]Implementasjon:[/]");
+        m("Gå til [yellow]Fagdag.Web.Components.Chat.Chat.razor.cs[/] og rediger metoden [yellow]GetPrompt[/]. Metoden har to parametre; [lime]userMessage[/] - brukerens spørsmål, og [lime]dataContext[/] - konteksten du ønsker å gi til modellen.");
         AnsiConsole.Write(codePanel);
     }
 
@@ -548,14 +551,70 @@ static void Prompt()
 }
 
 // Sett opp flyt for RAG
-static void RagFlow()
+void RagFlow()
 {
+    m("[fuchsia]Flyt for RAG:[/]");
+    m("I dette steget skal du sette sammen flyten for RAG - fra brukerens spørsmål kommer inn til ferdig generert svar er returnert.");
+
     PromptNext();
+
+    var codePanel = new Panel(
+        new Text(
+            """
+            async void SendMessage()
+            {
+                if (ChatHandler is null || SearchHandler is null) return;
+
+                OpenAI.Chat.ChatMessage[] chatMessages = [
+                    .. messages.Select<Message, OpenAI.Chat.ChatMessage>(
+                        x => x.IsAssistant
+                            ? new AssistantChatMessage(x.Content)
+                            : new UserChatMessage(x.Content))
+                ];
+
+                if (!string.IsNullOrWhiteSpace(userMessageText))
+                {
+                    var userMessage = new Message()
+                    {
+                        IsAssistant = false,
+                        Content = userMessageText
+                    };
+
+                    ...
+
+                    // TODO: Hent embeddings for userMessage.Content med 'ChatHandler'
+                    // Dimensions må settes til 1536, da det er denne størrelsen som brukes i Embedding skill
+
+                    // TODO: Søk etter dokumenter ved å bruke SearchHandler
+
+                    // TODO: Hent ut relevant info fra dokumentene, og legg dem inn i prompten som en streng.
+
+                    // TODO: Lag prompten som en streng
+
+                    // TODO: Legg til en ny UserChatMessage i listen 'chatMessages' med prompten du laget
+
+                    // TODO: Send til AI-modell ved å bruke 'ChatHandler'
+                    // Det er også mulig å strømme resultatet token for token, som gir en bedre brukeropplevelse.
+
+                    // TODO: Append generert svar til assistantMessage.Content, og kall StateHasChanged.
+                    // assistantMessage.Content += update;
+                    // StateHasChanged();
+                }    
+            }
+            """
+        )
+    );
+
+    m("[fuchsia]Implementasjon:[/]");
+    m("Gå til filen [yellow]Fagdag.Web.Components.Chat.Chat.razor.cs[/] og implementer metoden [yellow]SendMessage[/].");
+    AnsiConsole.Write(codePanel);
+    PromptNext("\nTrykk [teal]Enter[/] for å gå til neste steg.");
 }
 
 // Test webapplikasjon
-static void TestWebApp()
+void TestWebApp()
 {
+    m("Kjør prosjektet [yellow]fagdag.web[/] for å teste.");
     PromptNext();
 }
 
@@ -579,17 +638,17 @@ bool TestStepZero()
 
                 Sleep();
 
-                AnsiConsole.MarkupLine("Test av konfigurasjon i appsettings.json :check_mark_button:");
+                m("Test av konfigurasjon i appsettings.json :check_mark_button:");
                 successful = true;
             }
             catch (ArgumentException ex)
             {
-                AnsiConsole.MarkupLine($"Testen gikk ikke som forventet!\n[red]{ex.Message}[/]");
+                m($"Testen gikk ikke som forventet!\n[red]{ex.Message}[/]");
                 successful = false;
             }
             catch (UriFormatException ex)
             {
-                AnsiConsole.MarkupLine($"Vennligst sjekk formatet på endepunktene!\n[red]{ex.Message}[/]");
+                m($"Vennligst sjekk formatet på endepunktene!\n[red]{ex.Message}[/]");
                 successful = false;
             }
         });
@@ -634,12 +693,12 @@ async Task<bool> TestStepTwo()
                 ArgumentNullException.ThrowIfNull(azureSearchIndexerService);
                 var skillset = await azureSearchIndexerService.CreateSkillsetAsync();
                 Sleep();
-                AnsiConsole.MarkupLine($"Test av skillsets vellykket! Skillset med navn {skillset.Name} er opprettet. :check_mark_button:");
+                m($"Test av skillsets vellykket! Skillset med navn {skillset.Name} er opprettet. :check_mark_button:");
                 successful = true;
             }
             catch (Exception)
             {
-                AnsiConsole.MarkupLine($"[red]Noe gikk galt under oppretting av skillsets.[/]\n");
+                m($"[red]Noe gikk galt under oppretting av skillsets.[/]\n");
             }
         });
 
