@@ -19,10 +19,6 @@ public class Index
     [JsonPropertyName("chunk")]
     public string Chunk { get; set; }
 
-    [SearchableField]
-    [JsonPropertyName("languageCode")]
-    public string LanguageCode { get; set; }
-
     [VectorSearchField(
         VectorSearchDimensions = 1536, 
         VectorSearchProfileName = Constants.HnswProfile

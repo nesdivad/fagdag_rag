@@ -14,6 +14,7 @@ public interface IAzureSearchIndexService
 {
     Task<SearchIndex> CreateOrUpdateSearchIndexAsync();
     IAsyncEnumerable<SearchResult<Index>> SearchAsync(ReadOnlyMemory<float> embedding);
+    IAsyncEnumerable<SearchResult<Index>> SearchAsync(string searchText, int size = 10);
 }
 
 public class AzureSearchIndexService : IAzureSearchIndexService
@@ -103,7 +104,7 @@ public class AzureSearchIndexService : IAzureSearchIndexService
         FieldBuilder builder = new();
         IList<SearchField> fields = builder.Build(typeof(Index));
 
-        // TODO: Lag en instans av søkeindeksen, og inkluder:
+        // TODO: Lag en instans av søkeindeksen (SearchIndex), og inkluder:
         // indeksnavn
         // felter (som du lagde i forrige steg)
         // Similarity skal settes til BM25Similarity
@@ -116,17 +117,35 @@ public class AzureSearchIndexService : IAzureSearchIndexService
             VectorSearch = vectorSearch
         };
 
-        // TODO: Opprett søkeindeksen
+        // TODO: Opprett søkeindeksen i Azure AI Search ved å bruke SearchIndexClient
         // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.searchindexclient.createorupdateindexasync?view=azure-dotnet
         await SearchIndexClient.CreateOrUpdateIndexAsync(
             index: searchIndex,
             allowIndexDowntime: true
         );
 
-        return searchIndex;
 
-        // TODO: Fjern når du er ferdig
+        // TODO: Returnér searchIndex
+        return searchIndex;
         // throw new NotImplementedException();
+    }
+
+    public async IAsyncEnumerable<SearchResult<Index>> SearchAsync(string searchText, int size = 10)
+    {
+        var options = new SearchOptions
+        {
+            SearchFields = { "chunk" },
+            Select = { "id", "chunk", "parent_id" },
+            Size = size
+        };
+        var documents = await SearchIndexClient
+            .GetSearchClient(indexName: IndexName)
+            .SearchAsync<Index>(searchText: searchText, options: options);
+
+        await foreach (var doc in documents.Value.GetResultsAsync())
+        {
+            yield return doc;
+        }
     }
 
     public async IAsyncEnumerable<SearchResult<Index>> SearchAsync(ReadOnlyMemory<float> embedding)
@@ -142,9 +161,9 @@ public class AzureSearchIndexService : IAzureSearchIndexService
             }
         };
 
-        var documents = await SearchIndexClient.GetSearchClient(indexName: IndexName).SearchAsync<Index>(
-            options: options
-        );
+        var documents = await SearchIndexClient
+            .GetSearchClient(indexName: IndexName)
+            .SearchAsync<Index>(options: options);
 
         await foreach (var doc in documents.Value.GetResultsAsync())
         {

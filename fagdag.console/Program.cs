@@ -1,3 +1,5 @@
+using System.Text;
+
 using Azure.Search.Documents.Indexes.Models;
 
 using Fagdag.Utils;
@@ -12,6 +14,8 @@ using Spectre.Console.Json;
 var host = Host.CreateApplicationBuilder(args);
 var app = host.Build();
 var configuration = app.Services.GetRequiredService<IConfiguration>();
+
+Console.CancelKeyPress += (sender, e) => Console.CursorVisible = true;
 
 string username = string.Empty;
 AzureOpenAIService? azureOpenAIService = null;
@@ -60,7 +64,8 @@ void DataFlow(IConfiguration configuration)
         "1. Konfigurer skills og skillset",
         "2. Opprett indeks",
         "3. Opprett indekserer",
-        "4. Test hele løsningen!"
+        "4. Test hele løsningen!",
+        "5. Søk i indeksen"
     ];
 
     void Information()
@@ -94,7 +99,7 @@ void DataFlow(IConfiguration configuration)
             }
             """
         );
-        
+
         AnsiConsole.MarkupLine("[fuchsia]Konfigurasjon:[/]");
         AnsiConsole.MarkupLine("Finn filen [yellow]appsettings.json[/] i prosjektet [yellow]fagdag.console[/], og legg inn verdier for følgende variabler: ");
         AnsiConsole.Write(
@@ -132,6 +137,9 @@ void DataFlow(IConfiguration configuration)
                 break;
             case 3:
                 TestIndex();
+                break;
+            case 4:
+                Task.Run(SearchIndex).Wait();
                 break;
             default:
                 AnsiConsole.Clear();
@@ -186,8 +194,8 @@ void TextProcessing()
     void Impl()
     {
         AnsiConsole.MarkupLine("[fuchsia]Implementasjon:[/]");
-        AnsiConsole.MarkupLine("Gå til [yellow]Fagdag.Utils.AzureSearchIndexerService.cs[/] og implementér metoden [purple]CreateSkillsetAsync[/].");
-        AnsiConsole.MarkupLine("Start med å opprette de individuelle skillsene, før du setter dem sammen i et skillset. Til slutt skal skillsettet deployes ved å bruke metoden [purple]CreateOrUpdateSearchIndexerSkillset[/].");
+        AnsiConsole.MarkupLine("Gå til [yellow]Fagdag.Utils.AzureSearchIndexerService.cs[/] og implementér metoden [teal]CreateSkillsetAsync[/].");
+        AnsiConsole.MarkupLine("Start med å opprette de individuelle skillsene, før du setter dem sammen i et skillset. Til slutt skal skillsettet deployes ved å bruke metoden [teal]CreateOrUpdateSearchIndexerSkillset[/].");
         AnsiConsole.MarkupLine("\n[lime]PS:[/] Det er laget implementasjoner for individuelle skills nederst i [yellow]Fagdag.Utils.AzureSearchIndexerService.cs[/]");
 
         var codePanel = new Panel(new Text(
@@ -241,24 +249,70 @@ static void Index()
     void Index()
     {
         // Informasjon om indeks-skjema
-        
+        AnsiConsole.MarkupLine("[fuchsia]Indeks-skjema:[/]");
+        AnsiConsole.MarkupLine("Definisjonen av et dokument i indeksen er laget med klassen [yellow]Fagdag.Utils.Index[/]:\n");
+        Panel panel = new(new JsonText(
+            """
+            {
+                "id": "Primærnøkkel for dokumentet",
+                "parentId": "Id som vi benytter for å referere til mordokumentet etter vi har splittet datakildene med SplitSkill.",
+                "chunk": "Tekstinnholdet etter mordokumentet er splittet opp",
+                "vector": "Embeddings for teksten i feltet 'chunk'. Dette feltet har også attributtet 'VectorSearchField', som sier noe om vektorens dimensjon og hvilken søkealgoritme som skal brukes."
+            }
+            """)
+        )
+        {
+            Header = new PanelHeader("Dokument")
+        };
+        AnsiConsole.Write(panel);
+        AnsiConsole.MarkupLine("[link blue]https://learn.microsoft.com/en-us/azure/search/tutorial-rag-build-solution-index-schema[/]\n");
     }
 
     void Impl()
     {
+        var codePanel = new Panel(new Text(
+            """
+            public async Task<SearchIndex> CreateOrUpdateSearchIndexAsync()
+            {
+                ...
 
+                // TODO: Definér skjemaet for indeksen ved å bruke 'FieldBuilder'-klassen for å bygge en liste med search fields av typen 'SearchField'.
+
+                // TODO: Lag en instans av søkeindeksen (SearchIndex), og inkluder:
+                // indeksnavn
+                // felter (som du lagde i forrige steg)
+                // Similarity skal settes til BM25Similarity
+                // vectorSearch-instansen
+
+                // TODO: Opprett søkeindeksen i Azure AI Search ved å bruke SearchIndexClient
+
+
+                // TODO: Returnér searchIndex
+                // return searchIndex;
+                throw new NotImplementedException();
+            }
+            """
+        ));
+
+        AnsiConsole.MarkupLine("[fuchsia]Implementasjon:[/]");
+        AnsiConsole.MarkupLine("Gå til [yellow]Fagdag.Utils.AzureSearchIndexService[/] og implementér metoden [yellow]CreateOrUpdateSearchIndexAsync()[/]");
+        AnsiConsole.MarkupLine("Vær obs på at det ligger noe kode her fra før, det er kun TODOs som skal implementeres.");
+        AnsiConsole.MarkupLine("Start med å lage en liste av typen 'SearchField' fra indeks-skjema som er definert. Opprett deretter en ny instans av 'SearchIndex', før du til slutt oppretter den i [aqua]Azure AI Search[/] og returnerer 'SearchIndex'-instansen.");
+
+        AnsiConsole.Write(codePanel);
     }
 
-    Information(); 
-    PromptNext(); 
-    RenderSeparator(); 
-    Index(); 
-    PromptNext(); 
-    Impl(); 
+    Information();
+    PromptNext();
+    RenderSeparator();
+    Index();
+    PromptNext();
+    RenderSeparator();
+    Impl();
     PromptNext(prompt: "\nTrykk [teal]Enter[/] for å fullføre steget.");
 }
 
-// Oppsett av indeks og indekserer
+// Oppsett av indekserer
 static void Indexer()
 {
     void Information()
@@ -266,38 +320,89 @@ static void Indexer()
         AnsiConsole.MarkupLine("[fuchsia]Indekserer:[/]");
         AnsiConsole.MarkupLine("I dette steget skal vi konfigurere [aqua]AI Search Indexer[/]. Jobben til indekseren er å populere søkeindeksen med data.");
         AnsiConsole.MarkupLine("Den henter først inn datasettet vårt fra en datakilde (som allerede er konfigurert), og så kjører den skillsettet på disse dataene.");
-        AnsiConsole.MarkupLine("\n[link blue]https://learn.microsoft.com/en-us/azure/search/search-indexer-overview[/]");
-    }
+        AnsiConsole.MarkupLine("Når skillsets er kjørt på datasettet, utføres projeksjoner fra output-felter på hvert skill til de korrekte feltene i indeksen, som ble definert i [yellow]Fagdag.Utils.Index[/].");
 
-    void Indexer()
-    {
-        AnsiConsole.MarkupLine("");
+        AnsiConsole.MarkupLine("\n[link blue]https://learn.microsoft.com/en-us/azure/search/search-indexer-overview[/]");
     }
 
     void Impl()
     {
+        var codePanel = new Panel(
+            new Text(
+                """
+                public async Task<SearchIndexer> CreateOrUpdateIndexerAsync()
+                {
+                    ...
+                    
+                    // TODO: Lag en instans av 'IndexingParameters', og sett følgende felter:
+                    // MaxFailedItems = -1 (indekserer kjører uansett hvor mange feil du får)
+                    // MaxFailedItemsPerBatch = -1 (indekserer kjører uansett hvor mange feil du får)
+                    // IndexingParametersConfiguration = []
+                    // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.models.indexingparameters?view=azure-dotnet
+
+                    // TODO: Legg til konfigurasjon for IndexingParametersConfiguration:
+                    // key: "dataToExtract", value: "contentAndMetadata"
+
+                    // TODO: Lag en ny instans av 'SearchIndexer', og inkluder:
+                    // indeksnavn
+                    // navn på datakilde (DataSourceConnection)
+                    // navn på søkeindeks
+                    // IndexingParameters som du lagde i forrige steg
+                    // Navn på skillset
+
+                    // TODO: Opprett indekserer i Azure AI Search
+
+                    // TODO: Returner indekserer
+                    // return indexer;
+                    throw new NotImplementedException();
+                }
+                """
+            )
+        );
     }
-    
+
     Information();
-    PromptNext();
-    RenderSeparator();
-    Indexer();
     PromptNext();
     RenderSeparator();
     Impl();
     PromptNext(prompt: "\nTrykk [teal]Enter[/] for å fullføre steget.");
 }
 
-// Kjøre indeksering, og alt rundt
-static void RunIndexer()
-{
-    PromptNext();
-}
-
 // Test indeks, mulighet til å søke på dokumenter i indeksen
 void TestIndex()
 {
     Task.Run(Test).Wait();
+    PromptNext();
+}
+
+async Task SearchIndex()
+{
+    async IAsyncEnumerable<string> Search(string searchText)
+    {
+        var results = azureSearchIndexService.SearchAsync(
+            searchText: searchText, 
+            size: 5
+        );
+
+        await foreach (var item in results)
+        {
+            StringBuilder sb = new();
+            sb.AppendLine($"{item.Document.Chunk}\n");
+            yield return sb.ToString();
+        }
+    }
+
+    azureSearchIndexService ??= CreateAzureSearchIndexService(configuration);
+
+    AnsiConsole.MarkupLine("[lime]Søk[/] i søkeindeksen du har bygget opp! Søket returnerer inntil 5 resultater.\n");
+    string qa = AnsiConsole.Ask<string>("Skriv inn søkefrasen her:");
+    
+    await foreach (var doc in Search(qa))
+    {
+        AnsiConsole.WriteLine(doc);
+        RenderSeparator();
+    }
+
     PromptNext();
 }
 
@@ -389,7 +494,7 @@ async Task<bool> TestStepOne()
 
     await AnsiConsole.Status()
         .Spinner(Spinner.Known.Default)
-        .StartAsync("Oppretter indeks...", async ctx => 
+        .StartAsync("Oppretter indeks...", async ctx =>
         {
             try
             {
@@ -413,7 +518,7 @@ async Task<bool> TestStepTwo()
     bool successful = false;
     await AnsiConsole.Status()
         .Spinner(Spinner.Known.Default)
-        .StartAsync("Oppretter skillsets...", async ctx => 
+        .StartAsync("Oppretter skillsets...", async ctx =>
         {
             try
             {
@@ -439,7 +544,7 @@ async Task<bool> TestStepThree()
 
     await AnsiConsole.Status()
         .Spinner(Spinner.Known.Default)
-        .StartAsync("Oppretter indekserer...", async ctx => 
+        .StartAsync("Oppretter indekserer...", async ctx =>
         {
             ArgumentNullException.ThrowIfNull(azureSearchIndexerService);
             SearchIndexer? indexer = null;
@@ -461,7 +566,7 @@ async Task<bool> TestStepThree()
                 ctx.Status("Sjekker status til indekserer ...");
                 IndexerExecutionResult? indexerStatus = default;
 
-                do 
+                do
                 {
                     Sleep(milliseconds: 4000);
                     indexerStatus = await azureSearchIndexerService.GetIndexerStatus(indexer);

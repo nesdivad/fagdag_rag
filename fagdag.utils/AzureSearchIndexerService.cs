@@ -155,7 +155,13 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         }
         catch (RequestFailedException ex) when (ex.Status is 404) { }
 
-        // https://learn.microsoft.com/en-us/azure/search/cognitive-search-tutorial-blob-dotnet#step-4-create-and-run-an-indexer
+        // Eksempel: https://learn.microsoft.com/en-us/azure/search/cognitive-search-tutorial-blob-dotnet#step-4-create-and-run-an-indexer
+
+        // TODO: Lag en instans av 'IndexingParameters', og sett følgende felter:
+        // MaxFailedItems = -1 (indekserer kjører uansett hvor mange feil du får)
+        // MaxFailedItemsPerBatch = -1 (indekserer kjører uansett hvor mange feil du får)
+        // IndexingParametersConfiguration = []
+        // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.models.indexingparameters?view=azure-dotnet
         IndexingParameters indexingParameters = new()
         {
             MaxFailedItems = -1,
@@ -163,23 +169,35 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
             IndexingParametersConfiguration = []
         };
 
+        // TODO: Legg til konfigurasjon for IndexingParametersConfiguration:
+        // key: "dataToExtract", value: "contentAndMetadata"
         indexingParameters.IndexingParametersConfiguration.Add(
             key: "dataToExtract",
             value: "contentAndMetadata"
         );
 
+        // TODO: Lag en ny instans av 'SearchIndexer', og inkluder:
+        // indeksnavn
+        // navn på datakilde (DataSourceConnection)
+        // navn på søkeindeks
+        // IndexingParameters som du lagde i forrige steg
+        // Navn på skillset
         SearchIndexer indexer = new(
             name: IndexerName,
             dataSourceName: DataSourceConnection.Name,
             targetIndexName: IndexName)
         {
             Parameters = indexingParameters,
-            SkillsetName = SkillsetName 
+            SkillsetName = SkillsetName
         };
 
+
+        // TODO: Opprett indekserer i Azure AI Search
         indexer = await SearchIndexerClient.CreateOrUpdateIndexerAsync(indexer);
 
+        // TODO: Returner indekserer
         return indexer;
+        // throw new NotImplementedException();
     }
 
     public async Task<IndexerExecutionResult> GetIndexerStatus(SearchIndexer indexer)
