@@ -13,18 +13,16 @@ using Spectre.Console.Json;
 
 var host = Host.CreateApplicationBuilder(args);
 var app = host.Build();
-var configuration = app.Services.GetRequiredService<IConfiguration>();
 
 Console.CancelKeyPress += (sender, e) => Console.CursorVisible = true;
 
-string username = string.Empty;
+string username = TangOgTare.GetOrCreateUsername();
+ArgumentException.ThrowIfNullOrEmpty(username);
+
+var configuration = app.Services.GetRequiredService<IConfiguration>();
 AzureOpenAIService? azureOpenAIService = null;
 AzureSearchIndexService? azureSearchIndexService = null;
 AzureSearchIndexerService? azureSearchIndexerService = null;
-
-
-username = TangOgTare.GetOrCreateUsername();
-configuration[Constants.Username] = username;
 
 AnsiMarkup m = AnsiConsole.MarkupLine;
 

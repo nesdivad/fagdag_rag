@@ -11,11 +11,8 @@ builder.Services.AddScoped<IAzureOpenAIService, AzureOpenAIService>();
 builder.Services.AddScoped<IAzureSearchIndexService, AzureSearchIndexService>();
 
 var app = builder.Build();
+
 var configuration = app.Configuration;
-
-var username = TangOgTare.GetOrCreateUsername();
-ArgumentException.ThrowIfNullOrEmpty(username);
-
 var azureOpenaiEndpoint = configuration[Constants.AzureOpenAIEndpoint];
 var azureOpenaiApiKey = configuration[Constants.AzureOpenAIApiKey];
 

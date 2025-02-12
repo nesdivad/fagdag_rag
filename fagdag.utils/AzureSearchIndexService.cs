@@ -25,7 +25,7 @@ public class AzureSearchIndexService : IAzureSearchIndexService
     private Uri AzureOpenaiEndpoint { get; }
     public AzureSearchIndexService(IConfiguration configuration)
     {
-        var username = configuration[Constants.Username];
+        var username = TangOgTare.GetOrCreateUsername();
         var azureSearchApiKey = configuration[Constants.AzureSearchApiKey];
         var azureSearchEndpoint = configuration[Constants.AzureSearchEndpoint];
         var azureOpenaiApiKey = configuration[Constants.AzureOpenAIApiKey];

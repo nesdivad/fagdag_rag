@@ -29,7 +29,7 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
 
     public AzureSearchIndexerService(IConfiguration configuration)
     {
-        var username = configuration[Constants.Username];
+        var username = TangOgTare.GetOrCreateUsername();
         var azureSearchApiKey = configuration[Constants.AzureSearchApiKey];
         var azureSearchEndpoint = configuration[Constants.AzureSearchEndpoint];
         var azureOpenaiApiKey = configuration[Constants.AzureOpenAIApiKey];

@@ -3,8 +3,7 @@
         "Default": {
             "commandName": "Project",
             "environmentVariables": {
-                "DOTNET_ENVIRONMENT": "Development",
-                "DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE": "false"
+                "DOTNET_ENVIRONMENT": "Development"
             }
         }
     }

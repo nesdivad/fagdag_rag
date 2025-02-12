@@ -5,3 +5,4 @@ notebooks/fagdag
 notebooks/markdown
 **/user.txt
 **/appsettings.Development.json
+.vs/
