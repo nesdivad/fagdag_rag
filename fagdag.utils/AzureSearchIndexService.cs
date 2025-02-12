@@ -98,35 +98,24 @@ public class AzureSearchIndexService : IAzureSearchIndexService
 
         // TODO: Definér skjemaet for indeksen ved å bruke 'FieldBuilder'-klassen for å bygge en liste med search fields av typen 'SearchField'.
         // Dette skjemaet brukes når du senere skal søke etter dokumenter som en del av RAG-pipelinen.
-
         // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.fieldbuilder?view=azure-dotnet
-        FieldBuilder builder = new();
-        IList<SearchField> fields = builder.Build(typeof(Index));
+
 
         // TODO: Lag en instans av søkeindeksen (SearchIndex), og inkluder:
         // - indeksnavn
         // - felter (som du lagde i forrige steg)
         // - Similarity skal settes til BM25Similarity
         // - vectorSearch-instansen
-
         // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.models.searchindex?view=azure-dotnet
-        SearchIndex index = new(IndexName, fields)
-        {
-            Similarity = new BM25Similarity(),
-            VectorSearch = vectorSearch
-        };
+        
 
         // TODO: Opprett søkeindeksen i Azure AI Search ved å bruke SearchIndexClient
         // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.searchindexclient.createorupdateindexasync?view=azure-dotnet
-        await SearchIndexClient.CreateOrUpdateIndexAsync(
-            index: index,
-            allowIndexDowntime: true
-        );
 
 
         // TODO: Returnér searchIndex
-        return index;
-        // throw new NotImplementedException();
+        //return index;
+        throw new NotImplementedException();
     }
 
     /**

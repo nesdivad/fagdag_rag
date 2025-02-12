@@ -77,22 +77,11 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         CognitiveServicesApiKey.Deconstruct(out string cognitiveServicesApiKey);
 
         // TODO: Opprett en instans av hver skill (split skill og embedding skill)
-        var splitSkill = GetSplitSkill(
-            maximumPageLength: 2000,
-            pageOverlapLength: 500
-        );
         
-        var embeddingSkill = GetEmbeddingSkill(
-            azureOpenaiApiKey: azureOpenaiApiKey,
-            azureOpenaiEndpoint: AzureOpenaiEndpoint
-        );
 
         // TODO: Lag en liste med alle skills
-        List<SearchIndexerSkill> skills = [
-            splitSkill,
-            embeddingSkill
-        ];
 
+        
         // Prosjekter felter fra skillset over til dokumentet i indeksen
         IList<SearchIndexerIndexProjectionSelector> selectors = [
             new SearchIndexerIndexProjectionSelector(
@@ -116,19 +105,11 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         };
 
         // TODO: Deploy skillsettet til ressursen i Azure
-        SearchIndexerSkillset? indexerSkillset = await CreateOrUpdateSearchIndexerSkillset(
-            skills: skills,
-            indexProjection: indexProjection,
-            cognitiveServicesApiKey: cognitiveServicesApiKey
-        );
 
-        if (indexerSkillset is null)
-            throw new NullReferenceException(nameof(indexerSkillset));
-
+        
         // TODO: Fjern denne når implementasjonen er klar
-        // throw new NotImplementedException();
-
-        return indexerSkillset;
+        // return indexerSkillset;
+        throw new NotImplementedException();
     }
 
     /**
@@ -149,45 +130,28 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         // - MaxFailedItems = -1 (indekserer kjører uansett hvor mange feil du får)
         // - MaxFailedItemsPerBatch = -1 (indekserer kjører uansett hvor mange feil du får)
         // - IndexingParametersConfiguration = []
-
         // Eksempel: https://learn.microsoft.com/en-us/azure/search/cognitive-search-tutorial-blob-dotnet#step-4-create-and-run-an-indexer
         // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.models.indexingparameters?view=azure-dotnet
-        IndexingParameters indexingParameters = new()
-        {
-            MaxFailedItems = -1,
-            MaxFailedItemsPerBatch = -1,
-            IndexingParametersConfiguration = []
-        };
+
 
         // TODO: Legg til konfigurasjon for IndexingParametersConfiguration:
         // key: "dataToExtract", value: "contentAndMetadata"
-        indexingParameters.IndexingParametersConfiguration.Add(
-            key: "dataToExtract",
-            value: "contentAndMetadata"
-        );
-
+        
+        
         // TODO: Lag en ny instans av 'SearchIndexer', og inkluder:
         // - indeksnavn
         // - navn på datakilde (DataSourceConnection)
         // - navn på søkeindeks
         // - IndexingParameters som du lagde i forrige steg
         // - Navn på skillset
-        SearchIndexer indexer = new(
-            name: IndexerName,
-            dataSourceName: DataSourceConnection.Name,
-            targetIndexName: IndexName)
-        {
-            Parameters = indexingParameters,
-            SkillsetName = SkillsetName
-        };
 
 
         // TODO: Opprett indekserer i Azure AI Search
-        indexer = await SearchIndexerClient.CreateOrUpdateIndexerAsync(indexer);
+
 
         // TODO: Returner indekserer
-        return indexer;
-        // throw new NotImplementedException();
+        //return indexer;
+        throw new NotImplementedException();
     }
 
     public async Task<IndexerExecutionResult> GetIndexerStatus(SearchIndexer indexer)

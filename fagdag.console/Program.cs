@@ -482,8 +482,7 @@ void RAG()
             "AZURE_COGNITIVESERVICES_API_KEY": "",
             "AZURE_COGNITIVESERVICES_ENDPOINT": "",
             "AZURE_STORAGE_CONNECTION_STRING": "",
-            "AZURE_OPENAI_EMBEDDING_ENDPOINT": "",
-            "Username": ""
+            "AZURE_OPENAI_EMBEDDING_ENDPOINT": ""
         }
         """
     );
@@ -497,7 +496,7 @@ void RAG()
             .RoundedBorder()
             .BorderColor(Color.Yellow)
     );
-    m("Verdiene ligger i et [yellow]Keeper[/]-dokument, og deles med deg. Verdien [lime]Username[/] ligger i filen [yellow]user.txt[/] i roten av løsningen (sammen med .sln-filen).");
+    m("Verdiene ligger i et [yellow]Keeper[/]-dokument, og deles med deg.");
 
     PromptNext();
     RenderSeparator();
@@ -561,14 +560,7 @@ void RagFlow()
             """
             async void SendMessage()
             {
-                if (ChatHandler is null || SearchHandler is null) return;
-
-                OpenAI.Chat.ChatMessage[] chatMessages = [
-                    .. messages.Select<Message, OpenAI.Chat.ChatMessage>(
-                        x => x.IsAssistant
-                            ? new AssistantChatMessage(x.Content)
-                            : new UserChatMessage(x.Content))
-                ];
+                ...
 
                 if (!string.IsNullOrWhiteSpace(userMessageText))
                 {
