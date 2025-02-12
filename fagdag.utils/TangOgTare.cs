@@ -21,8 +21,7 @@ public static class TangOgTare
             ? Path.Combine(Directory.GetCurrentDirectory(), filename) 
             : Path.Combine(solutionDirectory.FullName, filename);
             
-        var existingUser = File.Exists(path);
-        if (existingUser)
+        if (File.Exists(path))
         {
             return File.ReadAllText(path);
         }

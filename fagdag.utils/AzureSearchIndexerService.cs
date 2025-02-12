@@ -21,12 +21,11 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
     private string SkillsetName { get; }
     private string IndexName { get; }
     private string IndexerName { get; }
-    private string Username { get; }
     private SearchIndexerClient SearchIndexerClient { get; }
     private SearchIndexerDataSourceConnection DataSourceConnection { get; }
     private ApiKeyCredential AzureOpenaiApiKey { get; }
     private ApiKeyCredential CognitiveServicesApiKey { get; }
-    private Uri? AzureOpenaiEndpoint { get; }
+    private Uri AzureOpenaiEndpoint { get; }
 
     public AzureSearchIndexerService(IConfiguration configuration)
     {
@@ -46,10 +45,9 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         ArgumentException.ThrowIfNullOrEmpty(azureOpenaiEmbeddingEndpoint);
         ArgumentException.ThrowIfNullOrEmpty(username);
 
-        Username = username;
-        IndexName = $"index{Username}";
-        IndexerName = $"indexer{Username}";
-        SkillsetName = $"skillset{Username}";
+        IndexName = $"index{username}";
+        IndexerName = $"indexer{username}";
+        SkillsetName = $"skillset{username}";
 
         SearchIndexerClient = new(new Uri(azureSearchEndpoint), new AzureKeyCredential(azureSearchApiKey));
         AzureOpenaiApiKey = new(azureOpenaiApiKey);
@@ -62,48 +60,35 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
             new SearchIndexerDataContainer("markdown")
         );
 
-        try
-        {
-            AzureOpenaiEndpoint = new Uri(azureOpenaiEmbeddingEndpoint);
-            SearchIndexerClient.CreateOrUpdateDataSourceConnection(dataSourceConnection);
-        }
-        catch (UriFormatException u)
-        {
-            Console.WriteLine($"En feil oppsto ved registrering av endepunkt for Azure AI Services.\nVennligst sjekk formatet i appsettings.json\n{u.Message}");
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine($"En feil oppsto ved oppretting av datakilde.\nException: {e.Message}");
-        }
-
+        AzureOpenaiEndpoint = new Uri(azureOpenaiEmbeddingEndpoint);
+        SearchIndexerClient.CreateOrUpdateDataSourceConnection(dataSourceConnection);
+        
         DataSourceConnection = dataSourceConnection;
     }
 
     /**
-     * <summary>Opprett skills, lag et nytt skillset og deploy det til ressursen i Azure
+     * <summary>Opprett skills, lag et nytt skillset og deploy det til Azure AI Search</summary>
+     * <returns>Liste med skills</returns>
      */
     public async Task<SearchIndexerSkillset> CreateSkillsetAsync()
     {
-        // TODO: Dekonstruer API-nøkkel for Azure OpenAI og Cognitive Services
+        // Dekonstruer API-nøkkel for Azure OpenAI og Cognitive Services
         AzureOpenaiApiKey.Deconstruct(out string azureOpenaiApiKey);
         CognitiveServicesApiKey.Deconstruct(out string cognitiveServicesApiKey);
 
-        // TODO: Opprett en instans av hver skill du ønsker å bruke
-        var piiSkill = GetPiiDetectionSkill();
-
+        // TODO: Opprett en instans av hver skill (split skill og embedding skill)
         var splitSkill = GetSplitSkill(
             maximumPageLength: 2000,
             pageOverlapLength: 500
         );
         
         var embeddingSkill = GetEmbeddingSkill(
-            apiKey: azureOpenaiApiKey,
-            endpoint: AzureOpenaiEndpoint!
+            azureOpenaiApiKey: azureOpenaiApiKey,
+            azureOpenaiEndpoint: AzureOpenaiEndpoint
         );
 
         // TODO: Lag en liste med alle skills
         List<SearchIndexerSkill> skills = [
-            // piiSkill,
             splitSkill,
             embeddingSkill
         ];
@@ -134,7 +119,7 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         SearchIndexerSkillset? indexerSkillset = await CreateOrUpdateSearchIndexerSkillset(
             skills: skills,
             indexProjection: indexProjection,
-            aiServicesApiKey: cognitiveServicesApiKey
+            cognitiveServicesApiKey: cognitiveServicesApiKey
         );
 
         if (indexerSkillset is null)
@@ -146,21 +131,26 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         return indexerSkillset;
     }
 
+    /**
+     *<summary>Opprett indekserer i Azure AI Search</summary>
+     *<returns>Instans av indekserer</returns>
+     */
     public async Task<SearchIndexer> CreateOrUpdateIndexerAsync()
     {
+        // Fjerner indekserer hvis den allerede eksisterer
         try
         {
             await SearchIndexerClient.GetIndexerAsync(indexerName: IndexerName);
             await SearchIndexerClient.DeleteIndexerAsync(indexerName: IndexerName);
         }
-        catch (RequestFailedException ex) when (ex.Status is 404) { }
-
-        // Eksempel: https://learn.microsoft.com/en-us/azure/search/cognitive-search-tutorial-blob-dotnet#step-4-create-and-run-an-indexer
+        catch (RequestFailedException ex) when (ex.Status is 404) {}
 
         // TODO: Lag en instans av 'IndexingParameters', og sett følgende felter:
-        // MaxFailedItems = -1 (indekserer kjører uansett hvor mange feil du får)
-        // MaxFailedItemsPerBatch = -1 (indekserer kjører uansett hvor mange feil du får)
-        // IndexingParametersConfiguration = []
+        // - MaxFailedItems = -1 (indekserer kjører uansett hvor mange feil du får)
+        // - MaxFailedItemsPerBatch = -1 (indekserer kjører uansett hvor mange feil du får)
+        // - IndexingParametersConfiguration = []
+
+        // Eksempel: https://learn.microsoft.com/en-us/azure/search/cognitive-search-tutorial-blob-dotnet#step-4-create-and-run-an-indexer
         // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.models.indexingparameters?view=azure-dotnet
         IndexingParameters indexingParameters = new()
         {
@@ -177,11 +167,11 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         );
 
         // TODO: Lag en ny instans av 'SearchIndexer', og inkluder:
-        // indeksnavn
-        // navn på datakilde (DataSourceConnection)
-        // navn på søkeindeks
-        // IndexingParameters som du lagde i forrige steg
-        // Navn på skillset
+        // - indeksnavn
+        // - navn på datakilde (DataSourceConnection)
+        // - navn på søkeindeks
+        // - IndexingParameters som du lagde i forrige steg
+        // - Navn på skillset
         SearchIndexer indexer = new(
             name: IndexerName,
             dataSourceName: DataSourceConnection.Name,
@@ -233,7 +223,7 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
     private async Task<SearchIndexerSkillset?> CreateOrUpdateSearchIndexerSkillset(
         IList<SearchIndexerSkill> skills,
         SearchIndexerIndexProjection indexProjection,
-        string aiServicesApiKey)
+        string cognitiveServicesApiKey)
     {
         var skillset = await GetSkillsetAsync(SkillsetName);
         if (skillset is not null)
@@ -243,7 +233,7 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         {
             Name = SkillsetName,
             Description = "Samling av skills som brukes i prosesseringen",
-            CognitiveServicesAccount = new CognitiveServicesAccountKey(aiServicesApiKey),
+            CognitiveServicesAccount = new CognitiveServicesAccountKey(cognitiveServicesApiKey),
             IndexProjection = indexProjection
         };
 
@@ -261,37 +251,8 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
     }
 
     /**
-     * <summary>Finn personlig identifiserbar informasjon, og maskér innholdet.</summary>
-     */
-    private static PiiDetectionSkill GetPiiDetectionSkill(double minimumPrecision = 0.5)
-    {
-        List<InputFieldMappingEntry> inputMappings = [
-            new("text") { Source = "/document/content" }
-        ];
-        List<OutputFieldMappingEntry> outputMappings = [
-            new("maskedText") { TargetName = "/document/maskedText"}
-        ];
-
-        var pii = new PiiDetectionSkill(inputMappings, outputMappings)
-        {
-            Name = "PII detection",
-            Description = "Detect personally identifiable information in the text, and mask it.",
-            DefaultLanguageCode = "nb",
-
-            // Erstatter PII med '*'
-            Mask = "*",
-            MaskingMode = PiiDetectionSkillMaskingMode.Replace,
-
-            // Minimum presisjon på en skala fra 0 til 1.
-            // Måles opp mot konfidensnivå i resultat fra AI-modellen.
-            MinPrecision = minimumPrecision
-        };
-
-        return pii;
-    }
-
-    /**
      * <summary>Splitt dokumenter opp i mindre biter</summary>
+     *<returns>Split skill</returns>
      */
     private static SplitSkill GetSplitSkill(
         int maximumPageLength = 2000,
@@ -329,13 +290,14 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
 
     /**
      * <summary>Lager embeddings av teksten i hvert dokument.</summary>
+     * <returns>Embedding skill</returns>
      */
     private static AzureOpenAIEmbeddingSkill GetEmbeddingSkill(
-        string apiKey,
-        Uri endpoint)
+        string azureOpenaiApiKey,
+        Uri azureOpenaiEndpoint)
     {
-        ArgumentException.ThrowIfNullOrEmpty(apiKey);
-        ArgumentNullException.ThrowIfNull(endpoint);
+        ArgumentException.ThrowIfNullOrEmpty(azureOpenaiApiKey);
+        ArgumentNullException.ThrowIfNull(azureOpenaiEndpoint);
 
         List<InputFieldMappingEntry> inputMappings = [
             // legg merke til at source er output fra forrige skill (split skill)
@@ -349,11 +311,11 @@ public class AzureSearchIndexerService : IAzureSearchIndexerService
         {
             Name = "Embedding skill",
             Description = "Create embeddings from text documents in order to use semantic search in RAG pipeline",
-            ApiKey = apiKey,
+            ApiKey = azureOpenaiApiKey,
             DeploymentName = Constants.TextEmbedding3Large,
             Dimensions = 1536,
             ModelName = Constants.TextEmbedding3Large,
-            ResourceUri = endpoint,
+            ResourceUri = azureOpenaiEndpoint,
             Context ="/document/pages/*"
         };
     }

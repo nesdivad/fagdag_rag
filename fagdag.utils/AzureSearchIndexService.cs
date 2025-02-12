@@ -52,7 +52,7 @@ public class AzureSearchIndexService : IAzureSearchIndexService
         ApiKeyCredential.Deconstruct(out string apiKey);
 
         // Dersom indeks eksisterer, slett og opprett ny
-        // Vil ikke anbefale denne metoden i prod ...
+        // Anbefaler ikke denne metoden i prod ...
         try
         {
             var result = await SearchIndexClient.GetIndexAsync(IndexName);
@@ -60,8 +60,7 @@ public class AzureSearchIndexService : IAzureSearchIndexService
         }
         catch (RequestFailedException ex) when (ex.Status is 404) { }
 
-        // Før vi kan søke i indeksen må søkefrasen gjøres om til en vektor.
-        // Det konfigurerer vi her, slik at vi slipper å ha et eget steg for dette i RAG-pipeline.
+        // Konfig for vektorsøk
         var vectorSearch = new VectorSearch();
         vectorSearch.Algorithms.Add(
             // Nærmeste nabo søketeknikk
@@ -105,13 +104,13 @@ public class AzureSearchIndexService : IAzureSearchIndexService
         IList<SearchField> fields = builder.Build(typeof(Index));
 
         // TODO: Lag en instans av søkeindeksen (SearchIndex), og inkluder:
-        // indeksnavn
-        // felter (som du lagde i forrige steg)
-        // Similarity skal settes til BM25Similarity
-        // vectorSearch-instansen
+        // - indeksnavn
+        // - felter (som du lagde i forrige steg)
+        // - Similarity skal settes til BM25Similarity
+        // - vectorSearch-instansen
 
         // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.models.searchindex?view=azure-dotnet
-        SearchIndex searchIndex = new(IndexName, fields)
+        SearchIndex index = new(IndexName, fields)
         {
             Similarity = new BM25Similarity(),
             VectorSearch = vectorSearch
@@ -120,16 +119,22 @@ public class AzureSearchIndexService : IAzureSearchIndexService
         // TODO: Opprett søkeindeksen i Azure AI Search ved å bruke SearchIndexClient
         // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.searchindexclient.createorupdateindexasync?view=azure-dotnet
         await SearchIndexClient.CreateOrUpdateIndexAsync(
-            index: searchIndex,
+            index: index,
             allowIndexDowntime: true
         );
 
 
         // TODO: Returnér searchIndex
-        return searchIndex;
+        return index;
         // throw new NotImplementedException();
     }
 
+    /**
+     *<summary>Søk etter dokumenter i søkeindeks</summary>
+     *<param name="searchText">Tekststreng du ønsker å søke på</param>
+     *<param name="size">Hvor mange dokumenter som skal returneres</param>
+     *<returns>async enumerator med dokumentene</returns>
+     */
     public async IAsyncEnumerable<SearchResult<Index>> SearchAsync(string searchText, int size = 10)
     {
         var options = new SearchOptions
@@ -148,6 +153,11 @@ public class AzureSearchIndexService : IAzureSearchIndexService
         }
     }
 
+    /**
+     *<summary>Søk etter dokumenter i søkeindeks</summary>
+     *<param name="embedding">Embeddings som skal brukes i søket</param>
+     *<returns>async enumerator med dokumentene</returns>
+     */
     public async IAsyncEnumerable<SearchResult<Index>> SearchAsync(ReadOnlyMemory<float> embedding)
     {
         var options = new SearchOptions

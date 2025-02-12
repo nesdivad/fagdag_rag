@@ -42,6 +42,12 @@ public class AzureOpenAIService : IAzureOpenAIService
         ChatClient = client.GetChatClient(Constants.Gpt4o);
     }
 
+    /**
+     *<summary>Lag embeddings av en tekststreng</summary>
+     *<param name="input">Tekststrengen</param>
+     *<param name="options">Innstillinger for antall dimensjoner. Anbefaler ikke å bruke denne.</param>
+     *<returns>Minnesegment med floats som er readonly</returns>
+     */
     public async Task<ReadOnlyMemory<float>> GetEmbeddingsAsync(
         string input, 
         EmbeddingGenerationOptions? options = null)
@@ -56,6 +62,12 @@ public class AzureOpenAIService : IAzureOpenAIService
         return result.Value.ToFloats();
     }
 
+    /**
+     *<summary>Send spørsmål til AI-modellen GPT-4o</summary>
+     *<param name="chatMessages">liste med meldinger</param>
+     *<param name="options">Innstillinger som temperatur, maks antall tokens m.m.</param>
+     *<returns>Resultat med alle tokens på én gang</returns>
+     */
     public async Task<ClientResult<ChatCompletion>> GetCompletionsAsync(
         ChatMessage[] chatMessages, 
         ChatCompletionOptions? options = null)
@@ -71,6 +83,12 @@ public class AzureOpenAIService : IAzureOpenAIService
         return await ChatClient.CompleteChatAsync(chatMessages, options);
     }
 
+    /**
+     *<summary>Send spørsmål til AI-modellen GPT-4o</summary>
+     *<param name="chatMessages">liste med meldinger</param>
+     *<param name="options">Innstillinger som temperatur, maks antall tokens m.m.</param>
+     *<returns>Resultatet som en strøm av tokens</returns>
+     */
     public AsyncCollectionResult<StreamingChatCompletionUpdate> GetCompletionsStreamingAsync(
         ChatMessage[] chatMessages, 
         ChatCompletionOptions? options = null)
