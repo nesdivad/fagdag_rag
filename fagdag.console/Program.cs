@@ -79,7 +79,7 @@ void DataFlow(IConfiguration configuration)
         m("I denne delen skal vi fokusere på å indeksere datakilden slik at den kan gjøres søkbar for løsningen vi skal bygge.");
 
         m("\n[fuchsia]Datakilde:[/]");
-        m("Datakilden vår består av tekstlig datadumper fra Bouvets personalhåndbok og diverse informasjon som ligger under området 'Meg som ansatt'.");
+        m("Datakilden vår består av tekstlig datadumper fra Bouvets personalhåndbok, informasjon som ligger under området 'Meg som ansatt' og diverse annen informasjon fra minside. Får du ikke svar, er sjansen stor for at informasjonen ikke er lagt inn.");
         m("Målet er at du skal sitte igjen med en løsning som kan brukes til å spørre om alt du måtte lure på som ansatt i Bouvet. Eksempler på spørsmål kan være hvilke [green]goder[/] du kan benytte deg av, hva du må gjøre dersom du blir [red]sykemeldt[/] m.m.");
 
         m("\n[fuchsia]Teknologi:[/]");

@@ -8,6 +8,18 @@ using OpenAI.Chat;
 
 namespace Fagdag.Web.Components.Chat;
 
+/**
+
+Eksempler på spørringer:
+
+1. Hvordan kan jeg bruke tiden min effektivt når jeg er "på benken" mellom oppdrag?
+2. Har Bouvet noen mentorprogrammer eller kan jeg få hjelp til å finne en mentor innen et nytt fagområde?
+3. Hvilke sertifiseringer anbefales for å øke mine ferdigheter og muligheter i Bouvet?
+4. Hvor kan jeg finne informasjon om Bouvet sine kanalstrategier?
+5. Hvordan kan jeg få tilgang til foredrag holdt av kolleger i Bouvet?
+
+*/
+
 public partial class Chat
 {
     [Inject]
