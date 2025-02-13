@@ -32,7 +32,8 @@ void Start()
 {
     string[] choices = [
         "1. Sett opp dataflyt og søkeindeks",
-        "2. Sett opp prompt og RAG-flyt for generativ AI"
+        "2. Sett opp prompt og RAG-flyt for generativ AI",
+        "3. Avslutt"
     ];
 
     while (true)
@@ -52,8 +53,10 @@ void Start()
                 DataFlow(configuration);
                 break;
             case 1:
-            default:
                 RAG();
+                break;
+            default:
+                Exit();
                 break;
         }
     }
@@ -79,8 +82,9 @@ void DataFlow(IConfiguration configuration)
         m("I denne delen skal vi fokusere på å indeksere datakilden slik at den kan gjøres søkbar for løsningen vi skal bygge.");
 
         m("\n[fuchsia]Datakilde:[/]");
-        m("Datakilden vår består av tekstlig datadumper fra Bouvets personalhåndbok, informasjon som ligger under området 'Meg som ansatt' og diverse annen informasjon fra minside. Får du ikke svar, er sjansen stor for at informasjonen ikke er lagt inn.");
-        m("Målet er at du skal sitte igjen med en løsning som kan brukes til å spørre om alt du måtte lure på som ansatt i Bouvet. Eksempler på spørsmål kan være hvilke [green]goder[/] du kan benytte deg av, hva du må gjøre dersom du blir [red]sykemeldt[/] m.m.");
+        m("Datakilden vår består av tekstlig datadumper fra Bouvets personalhåndbok, informasjon som ligger under området 'Meg som ansatt' og diverse annen informasjon fra minside.");
+        m("Får du ikke svar på spørsmålet ditt, er sjansen stor for at informasjonen ikke er lagt inn. Dette kan du sjekke i steg 5 - [blue]Søk i indeksen[/].");
+        m("Målet er at du skal sitte igjen med en løsning som kan brukes til å spørre om ting du måtte lure på som ansatt i Bouvet. Eksempler på spørsmål kan være hvilke [green]goder[/] du kan benytte deg av, hva du må gjøre dersom du blir [red]sykemeldt[/] m.m.");
 
         m("\n[fuchsia]Teknologi:[/]");
         m("I denne løsningen benytter vi AI-modeller fra OpenAI, som kjøres i Azure. Modellene benyttes til flere ting, som å svare på spørsmål eller lage [aqua]embeddings[/] (vi kommer tilbake til dette) av datakildene.");
@@ -180,20 +184,18 @@ void TextProcessing()
         m("I denne delen skal du lære å sette opp en pipeline for prosessering av tekst, fra rå data i markdown-format til søkbare indekserte dokumenter.");
         m("Den tekniske termen for en pipeline i [aqua]Azure AI Search[/] er et [aqua]skillset[/]. Et [aqua]skillset[/] består av ett eller flere [lime]skills[/].");
         m("Et [lime]skill[/] består av funksjonalitet som beriker søkedokumentet med informasjon. Dette kan være funksjonalitet som oversetter tekst, fjerner sensitiv informasjon, splitter dokumenter opp i mindre biter m.m.");
-        m("Det er mulig å lage egne skills, men i denne løsningen skal vi bare bruke skills fra Microsoft sitt bibliotek.");
-        m("Mer dokumentasjon om skillsets finnes her: [link]https://learn.microsoft.com/en-us/azure/search/cognitive-search-working-with-skillsets[/]");
+        m("Det er mulig å lage egne skills, men i denne løsningen skal vi kun bruke skills fra Microsoft sitt bibliotek.");
+        m("Mer dokumentasjon om skillsets finnes her: [link blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-working-with-skillsets[/]");
     }
 
     void Skills()
     {
         m("[fuchsia]Skillsets:[/]");
-        m("I dette steget skal skillsettet implementeres. For å holde det relativt enkelt er det valgt ut 3 skills som skal benyttes i settet, og hele flyten kan da se slik ut:");
-        m("\n[red]Rå data[/] | [lime]PII Detection[/] | [lime]Split skill[/] | [lime]Embedding skill[/] | [blue]Søkeklart dokument![/]\n");
-        m("[lime underline]PII Detection[/]: Finner tekst som inneholder personlig identifiserbar informasjon og maskerer den.");
+        m("I dette steget skal skillsettet implementeres. I denne løsningen er det valgt ut 2 skills som skal benyttes i settet, og flyten kan da se slik ut:");
+        m("\n[red]Rå data[/] | [lime]Split skill[/] | [lime]Embedding skill[/] | [blue]Søkeklart dokument![/]\n");
         m("[lime underline]Split skill[/]: Splitter dokumenter opp i mindre deler.");
         m("[lime underline]Embedding skill[/]: Lager embeddings av teksten i dokumentet.\n");
 
-        m("[link blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-pii-detection[/]");
         m("[link blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-textsplit[/]");
         m("[link blue]https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-azure-openai-embedding[/]");
     }
@@ -202,14 +204,14 @@ void TextProcessing()
     {
         m("[fuchsia]Implementasjon:[/]");
         m("Gå til [yellow]Fagdag.Utils.AzureSearchIndexerService.cs[/] og implementér metoden [teal]CreateSkillsetAsync[/].");
-        m("Start med å opprette de individuelle skillsene, før du setter dem sammen i et skillset. Til slutt skal skillsettet deployes ved å bruke metoden [teal]CreateOrUpdateSearchIndexerSkillset[/].");
-        m("\n[lime]PS:[/] Det er laget implementasjoner for individuelle skills nederst i [yellow]Fagdag.Utils.AzureSearchIndexerService.cs[/]");
+        m("Start med å opprette hvert individuelle skill, før du setter dem sammen i et skillset. Til slutt skal skillsettet deployes ved å bruke metoden [teal]CreateOrUpdateSearchIndexerSkillset[/].");
+        m("\nPS: Det er laget implementasjoner for individuelle skills nederst i [yellow]Fagdag.Utils.AzureSearchIndexerService.cs[/].");
 
         var codePanel = new Panel(new Text(
             """
             public async Task<SearchIndexerSkillset> CreateSkillsetAsync()
             {
-                // TODO: Dekonstruer API-nøkkel for AI Services
+                ...
 
                 // TODO: Opprett en instans av hver skill du ønsker å bruke
 
@@ -251,7 +253,7 @@ void Index()
         m("En indeks inneholder [lime]dokumenter[/]. Hvert dokument er en søkbar 'enhet' i indeksen, og kan dermed deles opp forskjellig, avhengig av din applikasjon.");
         m("Hver indeks er definert av et JSON-skjema, som inneholder informasjon om felter i dokumentet og annen metadata.");
 
-        m("\n [link blue]https://learn.microsoft.com/en-us/azure/search/search-what-is-an-index[/]");
+        m("\n[link blue]https://learn.microsoft.com/en-us/azure/search/search-what-is-an-index[/]");
     }
 
     void Index()
@@ -303,7 +305,7 @@ void Index()
         ));
 
         m("[fuchsia]Implementasjon:[/]");
-        m("Gå til [yellow]Fagdag.Utils.AzureSearchIndexService[/] og implementér metoden [yellow]CreateOrUpdateSearchIndexAsync()[/]");
+        m("Gå til [yellow]Fagdag.Utils.AzureSearchIndexService[/] og implementér metoden [teal]CreateOrUpdateSearchIndexAsync()[/]");
         m("Vær obs på at det ligger noe kode her fra før, det er kun TODOs som skal implementeres.");
         m("Start med å lage en liste av typen 'SearchField' fra indeks-skjema som er definert. Opprett deretter en ny instans av 'SearchIndex', før du til slutt oppretter den i [aqua]Azure AI Search[/] og returnerer 'SearchIndex'-instansen.");
 
@@ -346,7 +348,6 @@ void Indexer()
                     // MaxFailedItems = -1 (indekserer kjører uansett hvor mange feil du får)
                     // MaxFailedItemsPerBatch = -1 (indekserer kjører uansett hvor mange feil du får)
                     // IndexingParametersConfiguration = []
-                    // https://learn.microsoft.com/en-us/dotnet/api/azure.search.documents.indexes.models.indexingparameters?view=azure-dotnet
 
                     // TODO: Legg til konfigurasjon for IndexingParametersConfiguration:
                     // key: "dataToExtract", value: "contentAndMetadata"
@@ -384,7 +385,6 @@ void Indexer()
 void TestIndex()
 {
     Task.Run(Test).Wait();
-    PromptNext();
 }
 
 // Søk i indeksen du har laget
@@ -514,18 +514,23 @@ void Prompt()
         var tipPanel = new Panel(
             new Text(
                 """
-                1. Start prompten med å definere formålet. Hva vil du at brukeren skal få hjelp til? Prøv å beskrive det så konkret som mulig.
-                2. Skriv prompten på det samme språket som du ønsker svaret på. Siden kontekst er på norsk, vil du kanskje få dårligere resultater dersom du blander inn engelsk.
-                3. Gi instruksjoner om at AI-modellen kun skal svare basert på konteksten du gir den. Det reduserer sjansen for hallusinasjoner, men øker sjansen for at modellen ikke kan svare hvis konteksten er av dårlig kvalitet.
+                1. Start prompten med å definere formålet. Hva vil du at AI-modellen skal hjelpe brukeren med? Prøv å beskrive det så konkret som mulig.
+                
+                2. Skriv prompten på det samme språket som du ønsker svaret på. Siden kontekst (datakilden) er på norsk, vil du kanskje få dårligere resultater dersom du blander inn engelsk.
+                
+                3. Gi instruksjoner om at AI-modellen kun skal svare basert på konteksten du gir den. Det reduserer sjansen for hallusinasjoner, men øker sjansen for at modellen ikke kan svare hvis konteksten ikke har informasjonen som trengs for å svare på spørsmålet.
+                
                 4. Håndter tilfeller hvor AI-modellen ikke har kontekst til å svare på spørsmålet, f.eks. ved å fortelle den at den skal svare "Jeg vet ikke" eller "google it!".
-                5. Gi et (eller flere) eksempel på spørsmål og svar i prompten, slik at modellen lærer hvilke hvordan den skal svare på oppgaven.
+                
+                5. Gi et (eller flere) eksempel på spørsmål og svar i prompten, slik at modellen lærer hvilke hvordan den skal svare på oppgaven. Dette punktet kommer litt an på hvilken type løsning du lager, og det er ikke sikkert du får noe utbytte av å gjøre det i dette tilfelle.
                 """
             )
         );
 
         m("[fuchsia]Prompt:[/]");
-        m("Alle gode RAG-løsninger trenger en god datakilde, men det er til ingen nytte dersom prompten ikke er satt opp riktig!");
-        m("Det er ingen fasit på hva som utgjør en god eller dårlig prompt, det er forskjellig for hvert brukstilfelle. Her er noen tips som jeg liker å benytte:");
+        m("Alle RAG-løsninger trenger en god datakilde, men det er til liten nytte dersom prompten ikke er satt opp riktig!");
+        m("Det er ingen fasit på hva som utgjør en god eller dårlig prompt, det er forskjellig for hvert brukstilfelle.");
+        m("\nHer er noen tips som jeg liker å benytte:");
         AnsiConsole.Write(tipPanel);
     }
 
@@ -536,7 +541,7 @@ void Prompt()
         );
         
         m("[fuchsia]Implementasjon:[/]");
-        m("Gå til [yellow]Fagdag.Web.Components.Chat.Chat.razor.cs[/] og rediger metoden [yellow]GetPrompt[/]. Metoden har to parametre; [lime]userMessage[/] - brukerens spørsmål, og [lime]dataContext[/] - konteksten du ønsker å gi til modellen.");
+        m("Gå til [yellow]Fagdag.Web.Components.Chat.Chat.razor.cs[/] og rediger metoden [yellow]GetPrompt[/]. Metoden har to parametre; \n[lime]userMessage[/] - brukerens spørsmål\n[lime]dataContext[/] - konteksten du ønsker å gi til modellen.");
         AnsiConsole.Write(codePanel);
     }
 
@@ -550,10 +555,24 @@ void Prompt()
 // Sett opp flyt for RAG
 void RagFlow()
 {
+    var pipeline = new Panel(
+        new Text(
+            """
+            1. Lag embeddings av spørsmålet med embedding-modell fra Azure OpenAI
+            2. Søk etter dokumenter i Azure AI Search
+            3. Lag prompt som inneholder spørsmål og kontekst fra dokumentsøket
+            4. Generer med AI-modell fra Azure OpenAI
+            """
+        )
+    );
+    
     m("[fuchsia]Flyt for RAG:[/]");
     m("I dette steget skal du sette sammen flyten for RAG - fra brukerens spørsmål kommer inn til ferdig generert svar er returnert.");
+    m("Flyten for RAG kan se slik ut:\n");
+    AnsiConsole.Write(pipeline);
 
     PromptNext();
+    RenderSeparator();
 
     var codePanel = new Panel(
         new Text(
@@ -609,6 +628,19 @@ void TestWebApp()
 }
 
 #endregion
+
+void Exit()
+{
+    var exit = AnsiConsole.Prompt(
+        new TextPrompt<bool>("Ønsker du å avslutte programmet?")
+            .AddChoice(true)
+            .AddChoice(false)
+            .DefaultValue(false)
+            .WithConverter(choice => choice ? "y" : "n")
+    );
+    if (exit) Environment.Exit(0);
+    else Start();
+}
 
 #region [ Tests ]
 
@@ -744,6 +776,15 @@ async Task<bool> TestStepThree()
 
 async Task Test()
 {
+    var isRecompiled = AnsiConsole.Prompt(
+        new TextPrompt<bool>("Har du husket å rekompilere programmet?")
+            .AddChoice(true)
+            .AddChoice(false)
+            .DefaultValue(true)
+            .WithConverter(choice => choice ? "y" : "n")
+    );
+    if (!isRecompiled) return;
+    
     var stepZeroSuccess = TestStepZero();
     if (!stepZeroSuccess) return;
 
@@ -755,6 +796,8 @@ async Task Test()
 
     var stepThreeSuccess = await TestStepThree();
     if (!stepThreeSuccess) return;
+
+    PromptNext();
 }
 
 #endregion
