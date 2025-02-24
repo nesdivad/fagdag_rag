@@ -6,22 +6,33 @@
 
 <PageTitle>BouChat</PageTitle>
 
-<div class="chat">
-    <div class="messages-scroller">
-        <div class="messages">
-            <ChatMessage
-                State="@(new Message(){IsAssistant = true, Content = "Hei, jeg er en hjelpsom assistent som svarer på spørsmål fra ansatte i Bouvet. Akkurat nå svarer jeg på spørsmål om artikler fra sidene 'meg som ansatt' og personalhåndboken."})" />
-            @for (var i = 0; i < messages.Count; i++)
-            {
-                var id = $"message{i}";
-                var state = messages[i]!;
-                <ChatMessage @key="@id" State="@state" />
-            }
-        </div>
+<div class="chat-container">
+    <div class="chat-header">
+        <div class="chat-title">BouChat</div>
     </div>
+    
+    <div class="chat">
+        <div class="messages-scroller">
+            <div class="messages">
+                <ChatMessage
+                    State="@(new Message(){IsAssistant = true, Content = "Hei, jeg er en hjelpsom assistent som svarer på spørsmål fra ansatte i Bouvet. Akkurat nå svarer jeg på spørsmål om artikler fra sidene 'meg som ansatt' og personalhåndboken. Hva lurer du på?"})" />
+                @for (var i = 0; i < messages.Count; i++)
+                {
+                    var id = $"message{i}";
+                    var state = messages[i]!;
+                    <ChatMessage @key="@id" State="@state" />
+                }
+            </div>
+        </div>
 
-    <form class="write-message" @ref="@writeMessageElement" @onsubmit="@SendMessage">
-        <textarea @bind="@userMessageText" Placeholder="Spør Bouvet-botten" style="width: 100%; height: 100%;" />
-        <button type="submit">Send</button>
-    </form>
+        <form class="write-message" @ref="@writeMessageElement" @onsubmit="@SendMessage">
+            <textarea @bind="@userMessageText" Placeholder="Spør Bouvet-botten" style="width: 100%; resize: none;" />
+            <button type="submit" class="send-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </form>
+    </div>
 </div>
