@@ -1,19 +1,31 @@
+:root {
+    --claude-primary: #FF6B00;
+    --claude-dark: #121212;
+    --claude-dark-secondary: #1e1e1e;
+    --claude-text: #f0f0f0;
+    --claude-text-secondary: #b0b0b0;
+    --claude-accent: #D35A00;
+    --claude-border: #2a2a2a;
+}
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: var(--claude-dark);
+    color: var(--claude-text);
 }
 
 a, .btn-link {
-    color: #006bb7;
+    color: var(--claude-primary);
 }
 
 .btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    color: var(--claude-text);
+    background-color: var(--claude-primary);
+    border-color: var(--claude-accent);
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+  box-shadow: 0 0 0 0.1rem var(--claude-dark-secondary), 0 0 0 0.25rem var(--claude-primary);
 }
 
 .content {

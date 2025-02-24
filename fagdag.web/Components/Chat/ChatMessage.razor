@@ -3,16 +3,22 @@
 @if (State.IsAssistant)
 {
     <div class="message assistant visible">
-        <div class="sender-name">Assistent</div>
-        <div class="message-content" visi>
+        <div class="sender-avatar">
+            <div class="avatar-img">C</div>
+        </div>
+        <div class="sender-name">Claude</div>
+        <div class="message-content">
             <div class="message-text">@(string.IsNullOrEmpty(State.Content) ? "..." : State.Content)</div>
         </div>
     </div>
 }
 else
 {
-    <div class="message">
-        <div class="sender-name">Deg</div>
+    <div class="message user">
+        <div class="sender-avatar">
+            <div class="avatar-img">Du</div>
+        </div>
+        <div class="sender-name">Du</div>
         <div class="message-content">
             <div class="message-text">@State.Content</div>
         </div>

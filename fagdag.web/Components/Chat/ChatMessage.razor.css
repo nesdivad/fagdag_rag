@@ -1,13 +1,27 @@
 .message {
     display: grid;
-    grid-template-columns: 2rem 1fr;
-    grid-template-rows: min-content min-content;
+    grid-template-columns: 40px 1fr;
+    grid-template-rows: min-content auto;
     grid-template-areas:
-        "sender-icon sender-name"
-        ". message";
-    gap: 0.25rem .75rem;
+        "avatar sender-name"
+        "avatar message";
+    gap: 4px 12px;
     animation: message-appear 0.25s ease-out;
     overflow-y: hidden;
+    margin-bottom: 24px;
+    padding: 8px 16px;
+    border-radius: 8px;
+}
+
+.message.user {
+    background-color: #2a2a2a;
+    color: var(--claude-text);
+}
+
+.message.assistant {
+    border-left: 3px solid #FF6B00;
+    background-color: rgba(255, 107, 0, 0.1);
+    color: var(--claude-text);
 }
 
 @keyframes message-appear {
@@ -22,33 +36,44 @@
     }
 }
 
-.message ::deep .initials {
-    background-color: grey;
-}
-
-.message.assistant ::deep .initials {
-    background-color: #d800b1;
-}
-
 .message.assistant:not(.visible) {
     display: none;
 }
 
-.sender-icon {
-    grid-area: sender-icon;
-    align-self: center;
+.sender-avatar {
+    grid-area: avatar;
+    align-self: start;
     justify-self: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-top: 4px;
 }
 
-    .sender-icon ::deep img {
-        width: 21px !important;
-    }
+.avatar-img {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-weight: bold;
+    color: white;
+}
+
+.message.user .avatar-img {
+    background-color: #0078d4;
+}
+
+.message.assistant .avatar-img {
+    background-color: #FF6B00;
+}
 
 .sender-name {
     grid-area: sender-name;
-    font-size: 1rem;
+    font-size: 14px;
     font-weight: 600;
-    align-self: center;
+    margin-bottom: 4px;
 }
 
 .message-content {
@@ -58,11 +83,15 @@
 .message-text {
     white-space: pre-line;
     word-break: break-word;
+    font-size: 15px;
+    line-height: 1.5;
 }
 
 .search-info {
     font-weight: 500;
     margin-bottom: 0.5rem;
+    font-size: 14px;
+    color: var(--claude-text-secondary);
 }
 
     .search-info:before {
@@ -72,10 +101,12 @@
 .reference-link {
     display: flex;
     text-decoration: none;
-    background-color: rgba(128, 128, 128, 0.3);
+    background-color: rgba(255, 107, 0, 0.15);
     padding: 0.5rem 0.9rem;
     border-radius: 0.5rem;
     margin-top: 1rem;
+    border-left: 2px solid #FF6B00;
+    color: var(--claude-text);
 }
 
     .reference-link .ref-text {
@@ -84,10 +115,11 @@
         text-overflow: ellipsis;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
+        font-size: 14px;
     }
 
         .reference-link svg {
-            color: var(--neutral-foreground-rest);
+            color: #FF6B00;
             width: var(--type-ramp-base-line-height);
             height: var(--type-ramp-base-line-height);
             flex-grow: 0;
